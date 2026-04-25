@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FitForge">
+<title>FitForge — AI Health & Fitness System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0d0d; --surface: #161616; --surface2: #1e1e1e; --surface3: #272727;
+  --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.13);
+  --text: #f0ede8; --text2: #9e9a94; --text3: #5c5956;
+  --accent: #c8f06e; --accent-dim: rgba(200,240,110,0.1); --accent-dark: #1a2a00;
+  --red: #ff6b6b; --amber: #f5a623; --blue: #60a5fa; --pink: #f472b6;
+  --r: 14px; --rs: 8px;
+  --font-d: 'DM Serif Display', Georgia, serif;
+  --font-b: 'DM Sans', system-ui, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: var(--font-b); background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 88px; }
+
+/* ── Header ── */
+.hdr { position: sticky; top: 0; z-index: 100; background: rgba(13,13,13,0.92); border-bottom: 0.5px solid var(--border); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); padding: 44px 18px 14px; }
+.hdr-inner { max-width: 620px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
+.logo { font-family: var(--font-d); font-size: 22px; letter-spacing: -0.01em; }
+.logo em { color: var(--accent); font-style: normal; }
+.api-chip { font-size: 11px; padding: 5px 11px; border-radius: 20px; background: var(--surface2); border: 0.5px solid var(--border2); color: var(--text3); cursor: pointer; transition: all .15s; white-space: nowrap; }
+.api-chip.ok { color: var(--accent); border-color: rgba(200,240,110,.3); }
+
+/* ── Bottom nav ── */
+.bnav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; background: rgba(13,13,13,0.96); border-top: 0.5px solid var(--border); display: flex; padding-bottom: env(safe-area-inset-bottom); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+.ni { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 4px 8px; border: none; background: transparent; color: var(--text3); font-size: 10px; font-family: var(--font-b); font-weight: 500; letter-spacing: .05em; text-transform: uppercase; cursor: pointer; transition: color .15s; }
+.ni.active { color: var(--accent); }
+.ni-icon { font-size: 17px; line-height: 1; }
+
+/* ── Pages ── */
+.pg { display: none; max-width: 620px; margin: 0 auto; padding: 20px 16px 10px; }
+.pg.active { display: block; }
+.pg-title { font-family: var(--font-d); font-size: 26px; margin-bottom: 3px; }
+.pg-sub { font-size: 13px; color: var(--text3); margin-bottom: 20px; }
+
+/* ── Cards ── */
+.card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--r); padding: 18px; margin-bottom: 14px; }
+.card-lbl { font-size: 11px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--text3); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.opt-badge { font-size: 10px; font-weight: 500; letter-spacing: .03em; text-transform: none; color: var(--amber); background: rgba(245,166,35,.12); padding: 2px 8px; border-radius: 10px; }
+
+/* ── Form ── */
+.fg { display: grid; gap: 10px; }
+.fg2 { grid-template-columns: 1fr 1fr; }
+.fg3 { grid-template-columns: 1fr 1fr 1fr; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 12px; color: var(--text2); font-weight: 500; }
+.field input, .field select, .field textarea {
+  background: var(--surface2); border: 0.5px solid var(--border2); border-radius: var(--rs);
+  color: var(--text); font-size: 14px; font-family: var(--font-b); padding: 10px 12px; width: 100%;
+  -webkit-appearance: none; appearance: none; transition: border-color .15s;
+}
+.field select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%235c5956' d='M5 7L0 2h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 30px; }
+.field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: rgba(200,240,110,.45); }
+.field input::placeholder, .field textarea::placeholder { color: var(--text3); }
+.field textarea { resize: vertical; min-height: 78px; }
+
+/* ── Buttons ── */
+.btn { display: block; width: 100%; padding: 14px 20px; border-radius: var(--rs); border: none; cursor: pointer; font-size: 15px; font-weight: 600; font-family: var(--font-b); transition: all .15s; text-align: center; }
+.btn-a { background: var(--accent); color: var(--accent-dark); }
+.btn-a:hover { opacity: .88; transform: translateY(-1px); }
+.btn-a:active { transform: scale(.98); opacity: 1; }
+.btn-g { background: var(--surface2); color: var(--text); border: 0.5px solid var(--border2); }
+.btn-g:hover { background: var(--surface3); }
+.btn:disabled { opacity: .35; cursor: not-allowed; transform: none !important; }
+.btn-sm { padding: 9px 16px; font-size: 13px; width: auto; display: inline-block; }
+
+/* ── Toggle ── */
+.tog-row { display: flex; align-items: center; gap: 12px; }
+.tog-wrap { position: relative; width: 42px; height: 24px; flex-shrink: 0; cursor: pointer; }
+.tog-wrap input { opacity: 0; width: 0; height: 0; position: absolute; }
+.tog-track { position: absolute; inset: 0; background: var(--surface3); border-radius: 12px; border: 0.5px solid var(--border2); transition: background .2s; }
+.tog-wrap input:checked + .tog-track { background: var(--accent); }
+.tog-thumb { position: absolute; width: 17px; height: 17px; background: #fff; border-radius: 50%; top: 3px; left: 4px; transition: left .2s; pointer-events: none; }
+.tog-wrap input:checked ~ .tog-thumb { left: 21px; }
+.tog-lbl { font-size: 14px; color: var(--text2); }
+
+/* ── Banner ── */
+.banner { border-radius: var(--r); padding: 14px 16px; margin-bottom: 14px; display: flex; gap: 12px; }
+.banner-g { background: var(--accent-dim); border: 0.5px solid rgba(200,240,110,.2); }
+.banner-b { background: rgba(96,165,250,.08); border: 0.5px solid rgba(96,165,250,.2); }
+.banner-r { background: rgba(255,107,107,.08); border: 0.5px solid rgba(255,107,107,.2); }
+.banner-p { background: rgba(244,114,182,.08); border: 0.5px solid rgba(244,114,182,.2); }
+.banner-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.banner-body { font-size: 13px; color: var(--text2); line-height: 1.65; }
+.banner-body strong { color: var(--text); font-weight: 600; }
+.banner-body a { color: var(--accent); text-decoration: none; }
+
+/* ── Loading ── */
+.loading { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 52px 20px; }
+.spinner { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--border2); border-top-color: var(--accent); animation: spin .85s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.l-msg { font-size: 14px; color: var(--text2); text-align: center; }
+.l-sub { font-size: 12px; color: var(--text3); }
+
+/* ── Error ── */
+.err { background: rgba(255,107,107,.1); border: 0.5px solid rgba(255,107,107,.3); border-radius: var(--rs); padding: 14px; font-size: 14px; color: var(--red); margin-bottom: 14px; line-height: 1.6; }
+
+/* ── Plan output ── */
+.plan-out { animation: fadeUp .35s ease; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+.ps { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--r); padding: 18px; margin-bottom: 14px; }
+.ps h2 { font-family: var(--font-d); font-size: 19px; color: var(--accent); font-weight: 400; font-style: italic; margin-bottom: 12px; }
+.ps h3 { font-size: 14px; font-weight: 600; color: var(--text); margin: 14px 0 5px; }
+.ps p { font-size: 14px; color: var(--text2); line-height: 1.78; margin-bottom: 8px; }
+.ps ul, .ps ol { padding-left: 18px; margin-bottom: 8px; }
+.ps li { font-size: 14px; color: var(--text2); line-height: 1.72; margin-bottom: 3px; }
+.ps strong { color: var(--text); font-weight: 600; }
+
+/* ── Apple Health guide ── */
+.ah-steps { counter-reset: step; display: flex; flex-direction: column; gap: 10px; }
+.ah-step { display: flex; gap: 12px; align-items: flex-start; }
+.ah-step-num { width: 24px; height: 24px; border-radius: 50%; background: rgba(96,165,250,.15); border: 0.5px solid rgba(96,165,250,.3); color: var(--blue); font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.ah-step-body { font-size: 13px; color: var(--text2); line-height: 1.65; flex: 1; }
+.ah-step-body strong { color: var(--text); font-weight: 600; }
+.ah-step-body code { font-size: 12px; background: var(--surface3); padding: 2px 6px; border-radius: 4px; color: var(--accent); font-family: monospace; }
+.metric-ref { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.mref { background: var(--surface2); border-radius: var(--rs); padding: 10px 12px; }
+.mref-lbl { font-size: 11px; color: var(--text3); margin-bottom: 3px; }
+.mref-path { font-size: 12px; color: var(--blue); line-height: 1.4; }
+
+/* ── Phase pills ── */
+.phase-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+.ph-m { background: rgba(255,107,107,.13); color: #ff9494; }
+.ph-f { background: rgba(96,165,250,.13); color: #93c5fd; }
+.ph-o { background: rgba(200,240,110,.13); color: var(--accent); }
+.ph-l { background: rgba(245,166,35,.13); color: #fbbf24; }
+
+/* ── Cycle info ── */
+.cycle-info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.ci-item { background: var(--surface2); border-radius: var(--rs); padding: 10px 12px; }
+.ci-lbl { font-size: 11px; color: var(--text3); margin-bottom: 3px; }
+.ci-val { font-size: 13px; color: var(--text2); font-weight: 500; }
+
+/* ── Modal ── */
+.modal-ov { position: fixed; inset: 0; background: rgba(0,0,0,.82); z-index: 999; display: flex; align-items: flex-end; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.modal-ov.hidden { display: none; }
+.modal { background: var(--surface); border: 0.5px solid var(--border2); border-radius: var(--r) var(--r) 0 0; padding: 24px 20px 40px; width: 100%; max-width: 620px; margin: 0 auto; }
+.modal h3 { font-family: var(--font-d); font-size: 21px; margin-bottom: 8px; }
+.modal p { font-size: 13px; color: var(--text2); margin-bottom: 14px; line-height: 1.65; }
+.modal ol { padding-left: 18px; margin-bottom: 16px; }
+.modal ol li { font-size: 13px; color: var(--text2); line-height: 1.85; }
+.modal ol a { color: var(--accent); text-decoration: none; }
+.modal-input { width: 100%; background: var(--surface2); border: 0.5px solid var(--border2); border-radius: var(--rs); color: var(--text); font-family: var(--font-b); font-size: 14px; padding: 12px; margin-bottom: 12px; -webkit-appearance: none; }
+
+/* ── Divider ── */
+.div { border: none; border-top: 0.5px solid var(--border); margin: 16px 0; }
+
+@media (max-width: 380px) {
+  .fg2, .fg3 { grid-template-columns: 1fr 1fr; }
+  .fg3 { grid-template-columns: 1fr 1fr; }
+  .metric-ref { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="hdr">
+  <div class="hdr-inner">
+    <div class="logo">Fit<em>Forge</em></div>
+    <div class="api-chip" id="api-chip" onclick="openApiModal()">⚙ API Key</div>
+  </div>
+</div>
+
+<!-- ════════════════ PAGE: PROFILE ════════════════ -->
+<div class="pg active" id="pg-profile">
+  <h1 class="pg-title">Your Profile</h1>
+  <p class="pg-sub">Enter your current metrics — update these every 2 weeks at check-in</p>
+
+  <div class="card">
+    <div class="card-lbl">Personal info</div>
+    <div class="fg fg2" style="margin-bottom:10px;">
+      <div class="field"><label>First name</label><input type="text" id="name" placeholder="e.g. Sarah" /></div>
+      <div class="field"><label>Age</label><input type="number" id="age" placeholder="e.g. 28" min="16" max="100" /></div>
+    </div>
+    <div class="fg fg2">
+      <div class="field"><label>Biological sex</label>
+        <select id="sex" onchange="handleSex()">
+          <option value="">Select</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+      </div>
+      <div class="field"><label>Height (cm)</label><input type="number" id="height" placeholder="e.g. 165" /></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Core metrics</div>
+    <div class="fg fg2" style="margin-bottom:10px;">
+      <div class="field"><label>Weight (kg)</label><input type="number" id="weight" placeholder="e.g. 70" step="0.1" /></div>
+      <div class="field"><label>BMI</label><input type="number" id="bmi" placeholder="e.g. 24.5" step="0.1" /></div>
+    </div>
+    <div class="fg fg2">
+      <div class="field"><label>Body fat %</label><input type="number" id="bodyfat" placeholder="e.g. 28" step="0.1" /></div>
+      <div class="field"><label>Waist (cm)</label><input type="number" id="waist" placeholder="e.g. 82" step="0.1" /></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Blood panel <span class="opt-badge">optional</span></div>
+    <div class="fg fg3" style="margin-bottom:10px;">
+      <div class="field"><label>Cholesterol</label><input type="number" id="cholesterol" placeholder="mg/dL" /></div>
+      <div class="field"><label>HDL</label><input type="number" id="hdl" placeholder="mg/dL" /></div>
+      <div class="field"><label>LDL</label><input type="number" id="ldl" placeholder="mg/dL" /></div>
+    </div>
+    <div class="fg fg2">
+      <div class="field"><label>Triglycerides</label><input type="number" id="triglycerides" placeholder="mg/dL" /></div>
+      <div class="field"><label>HbA1c (%)</label><input type="number" id="hba1c" placeholder="e.g. 5.4" step="0.1" /></div>
+    </div>
+  </div>
+
+  <!-- Cycle card -->
+  <div class="card" id="cycle-card" style="display:none;">
+    <div class="card-lbl">Menstrual cycle tracking</div>
+    <div class="tog-row" style="margin-bottom:16px;">
+      <label class="tog-wrap">
+        <input type="checkbox" id="cycle-tog" onchange="toggleCycle()" />
+        <div class="tog-track"></div>
+        <div class="tog-thumb"></div>
+      </label>
+      <span class="tog-lbl">Sync workouts & meals to my cycle</span>
+    </div>
+    <div id="cycle-fields" style="display:none;">
+      <div class="banner banner-p" style="margin-bottom:14px;">
+        <div class="banner-icon">🌙</div>
+        <div class="banner-body">Your plan adapts <strong>intensity, exercise selection, and meals</strong> day-by-day across all 4 phases — menstrual, follicular, ovulatory, and luteal — using your RingConn cycle data.</div>
+      </div>
+      <div class="fg fg2" style="margin-bottom:10px;">
+        <div class="field"><label>Cycle length (days)</label><input type="number" id="cycle-len" placeholder="e.g. 28" min="21" max="40" value="28" /></div>
+        <div class="field"><label>Last period start</label><input type="date" id="period-start" /></div>
+      </div>
+      <div class="field" style="margin-bottom:10px;">
+        <label>Current phase</label>
+        <select id="cycle-phase">
+          <option value="">Select current phase</option>
+          <option value="menstrual">🔴 Menstrual — Days 1–5 (low energy, rest-focused)</option>
+          <option value="follicular">🔵 Follicular — Days 6–13 (rising energy, build phase)</option>
+          <option value="ovulatory">🟢 Ovulatory — Days 14–16 (peak strength window)</option>
+          <option value="luteal">🟡 Luteal — Days 17–28 (fatigue, comfort foods)</option>
+        </select>
+      </div>
+      <div id="cycle-preview" style="display:none;" class="cycle-info"></div>
+    </div>
+  </div>
+
+  <!-- RingConn / Apple Health tip -->
+  <div class="banner banner-b">
+    <div class="banner-icon">⌚</div>
+    <div class="banner-body"><strong>RingConn users:</strong> Sync your ring to Apple Health, then tap <strong>Check-In</strong> to see exactly which numbers to grab from the Health app. Takes under 60 seconds every 2 weeks.</div>
+  </div>
+
+  <button class="btn btn-a" onclick="saveProfile()">Save & set goals →</button>
+</div>
+
+<!-- ════════════════ PAGE: GOALS ════════════════ -->
+<div class="pg" id="pg-goals">
+  <h1 class="pg-title">Your Goals</h1>
+  <p class="pg-sub">Tell us what you're working toward</p>
+
+  <div class="card">
+    <div class="card-lbl">Target metrics</div>
+    <div class="fg fg3" style="margin-bottom:10px;">
+      <div class="field"><label>Goal weight (kg)</label><input type="number" id="g-weight" placeholder="e.g. 62" step="0.1" /></div>
+      <div class="field"><label>Goal body fat %</label><input type="number" id="g-bodyfat" placeholder="e.g. 22" step="0.1" /></div>
+      <div class="field"><label>Goal waist (cm)</label><input type="number" id="g-waist" placeholder="e.g. 76" step="0.1" /></div>
+    </div>
+    <div class="field">
+      <label>Timeframe</label>
+      <select id="g-timeframe">
+        <option value="3 months">3 months</option>
+        <option value="6 months" selected>6 months</option>
+        <option value="12 months">12 months</option>
+        <option value="flexible — no fixed deadline">No rush, flexible</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Training setup</div>
+    <div class="fg fg2" style="margin-bottom:10px;">
+      <div class="field"><label>Primary goal</label>
+        <select id="g-primary">
+          <option value="">Select</option>
+          <option value="fat loss and muscle tone">Fat loss & tone</option>
+          <option value="muscle building (hypertrophy)">Muscle building</option>
+          <option value="strength and power">Strength & power</option>
+          <option value="general fitness and health">General fitness</option>
+          <option value="endurance and cardiovascular health">Endurance & cardio</option>
+          <option value="body recomposition">Body recomposition</option>
+        </select>
+      </div>
+      <div class="field"><label>Fitness level</label>
+        <select id="g-level">
+          <option value="complete beginner">Beginner</option>
+          <option value="some gym experience">Some experience</option>
+          <option value="intermediate">Intermediate</option>
+          <option value="advanced">Advanced</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg fg2" style="margin-bottom:10px;">
+      <div class="field"><label>Gym days / week</label>
+        <select id="g-days">
+          <option value="3">3 days</option>
+          <option value="4" selected>4 days</option>
+          <option value="5">5 days</option>
+          <option value="6">6 days</option>
+        </select>
+      </div>
+      <div class="field"><label>Equipment</label>
+        <select id="g-equip">
+          <option value="full commercial gym">Full gym</option>
+          <option value="basic gym">Basic gym</option>
+          <option value="home gym with dumbbells and bench">Home + dumbbells</option>
+          <option value="bodyweight only">Bodyweight only</option>
+        </select>
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:10px;">
+      <label>Dietary preferences / restrictions</label>
+      <input type="text" id="g-diet" placeholder="e.g. vegetarian, no dairy, no gluten, none..." />
+    </div>
+    <div class="field">
+      <label>Injuries or limitations</label>
+      <input type="text" id="g-injuries" placeholder="e.g. lower back pain, bad knee — or none" />
+    </div>
+  </div>
+
+  <button class="btn btn-a" onclick="generatePlan()" id="gen-btn">Generate my 2-week plan ✦</button>
+</div>
+
+<!-- ════════════════ PAGE: PLAN ════════════════ -->
+<div class="pg" id="pg-plan">
+  <div id="plan-empty" class="banner banner-g">
+    <div class="banner-icon">📋</div>
+    <div class="banner-body">Fill in your <strong>Profile</strong> and <strong>Goals</strong>, then generate your personalized 2-week plan.</div>
+  </div>
+  <div id="plan-loading" class="loading" style="display:none;">
+    <div class="spinner"></div>
+    <div class="l-msg" id="plan-lmsg">Analyzing your health metrics...</div>
+    <div class="l-sub">Building your personalized 2-week program</div>
+  </div>
+  <div id="plan-err" class="err" style="display:none;"></div>
+  <div id="plan-out" class="plan-out" style="display:none;"></div>
+</div>
+
+<!-- ════════════════ PAGE: CHECK-IN ════════════════ -->
+<div class="pg" id="pg-checkin">
+  <h1 class="pg-title">2-Week Check-In</h1>
+  <p class="pg-sub">Grab your latest numbers from Apple Health & RingConn, then get a refreshed plan</p>
+
+  <div id="ci-no-plan" class="banner banner-g">
+    <div class="banner-icon">⏳</div>
+    <div class="banner-body">Generate your first plan before checking in.</div>
+  </div>
+
+  <div id="ci-main" style="display:none;">
+
+    <!-- Apple Health Guide -->
+    <div class="card">
+      <div class="card-lbl">
+        <span>⌚</span> How to get your numbers from Apple Health
+      </div>
+      <div class="banner banner-b" style="margin-bottom:14px;">
+        <div class="banner-icon">💡</div>
+        <div class="banner-body">Since your RingConn syncs to Apple Health, all your latest biometrics are in one place. Follow these steps, then fill in the fields below.</div>
+      </div>
+      <div class="ah-steps">
+        <div class="ah-step">
+          <div class="ah-step-num">1</div>
+          <div class="ah-step-body">Open the <strong>Health app</strong> on your iPhone (white icon with a red heart).</div>
+        </div>
+        <div class="ah-step">
+          <div class="ah-step-num">2</div>
+          <div class="ah-step-body">Tap <strong>Summary</strong> (bottom left). Scroll down to see your recent highlights, or tap <strong>Browse</strong> (bottom right) to find specific categories.</div>
+        </div>
+        <div class="ah-step">
+          <div class="ah-step-num">3</div>
+          <div class="ah-step-body">Find each metric below. Tap it to see the most recent reading from your RingConn.</div>
+        </div>
+      </div>
+      <hr class="div">
+      <div style="font-size:12px; color:var(--text3); margin-bottom:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase;">Where to find each metric</div>
+      <div class="metric-ref">
+        <div class="mref"><div class="mref-lbl">Weight</div><div class="mref-path">Browse → Body Measurements → Weight</div></div>
+        <div class="mref"><div class="mref-lbl">Body Fat %</div><div class="mref-path">Browse → Body Measurements → Body Fat Percentage</div></div>
+        <div class="mref"><div class="mref-lbl">Resting Heart Rate</div><div class="mref-path">Browse → Heart → Resting Heart Rate</div></div>
+        <div class="mref"><div class="mref-lbl">HRV</div><div class="mref-path">Browse → Heart → Heart Rate Variability</div></div>
+        <div class="mref"><div class="mref-lbl">SpO2 (Blood Oxygen)</div><div class="mref-path">Browse → Respiratory → Blood Oxygen</div></div>
+        <div class="mref"><div class="mref-lbl">Sleep (hrs/night)</div><div class="mref-path">Browse → Sleep → Sleep Duration</div></div>
+        <div class="mref" id="cycle-mref" style="display:none;"><div class="mref-lbl">Cycle Phase</div><div class="mref-path">Browse → Cycle Tracking → Cycle phase or RingConn app → Cycle tab</div></div>
+        <div class="mref" id="waist-mref"><div class="mref-lbl">Waist (cm)</div><div class="mref-path">Measure manually with a tape — not in Apple Health</div></div>
+      </div>
+      <div class="banner banner-g" style="margin-top:14px; margin-bottom:0;">
+        <div class="banner-icon">⚡</div>
+        <div class="banner-body"><strong>Pro tip:</strong> Screenshot your Apple Health Summary screen first so all numbers are visible while you fill in the form below.</div>
+      </div>
+    </div>
+
+    <!-- Updated metrics -->
+    <div class="card">
+      <div class="card-lbl">Updated metrics <span class="opt-badge">fill what you have</span></div>
+      <div class="fg fg2" style="margin-bottom:10px;">
+        <div class="field"><label>New weight (kg)</label><input type="number" id="ci-weight" placeholder="From Apple Health" step="0.1" /></div>
+        <div class="field"><label>New body fat %</label><input type="number" id="ci-bodyfat" placeholder="If available" step="0.1" /></div>
+      </div>
+      <div class="fg fg2" style="margin-bottom:10px;">
+        <div class="field"><label>Waist (cm)</label><input type="number" id="ci-waist" placeholder="Tape measure" step="0.1" /></div>
+        <div class="field"><label>BMI</label><input type="number" id="ci-bmi" placeholder="If available" step="0.1" /></div>
+      </div>
+      <div class="fg fg2" style="margin-bottom:10px;">
+        <div class="field"><label>Resting heart rate (bpm)</label><input type="number" id="ci-rhr" placeholder="From Apple Health" /></div>
+        <div class="field"><label>HRV (ms)</label><input type="number" id="ci-hrv" placeholder="From Apple Health" step="0.1" /></div>
+      </div>
+      <div class="fg fg2" style="margin-bottom:10px;">
+        <div class="field"><label>SpO2 / Blood oxygen (%)</label><input type="number" id="ci-spo2" placeholder="e.g. 97" step="0.1" /></div>
+        <div class="field"><label>Avg sleep (hrs/night)</label><input type="number" id="ci-sleep" placeholder="e.g. 7.2" step="0.1" /></div>
+      </div>
+      <div class="field" id="ci-phase-field" style="display:none;">
+        <label>Current cycle phase</label>
+        <select id="ci-phase">
+          <option value="menstrual">🔴 Menstrual (days 1–5)</option>
+          <option value="follicular">🔵 Follicular (days 6–13)</option>
+          <option value="ovulatory">🟢 Ovulatory (days 14–16)</option>
+          <option value="luteal">🟡 Luteal (days 17–28)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- How did it go -->
+    <div class="card">
+      <div class="card-lbl">How did the last 2 weeks go?</div>
+      <div class="fg fg2" style="margin-bottom:10px;">
+        <div class="field"><label>Overall energy</label>
+          <select id="ci-energy">
+            <option value="high — felt strong and energized">High — felt great</option>
+            <option value="moderate — held up well" selected>Moderate — OK</option>
+            <option value="low — often fatigued or drained">Low — fatigued</option>
+          </select>
+        </div>
+        <div class="field"><label>Workout completion</label>
+          <select id="ci-done">
+            <option value="completed all sessions">All sessions ✓</option>
+            <option value="completed most sessions (75%+)">Most (75%+)</option>
+            <option value="completed about half the sessions">About half</option>
+            <option value="completed fewer than half the sessions">Less than half</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:10px;">
+        <label>Diet adherence</label>
+        <select id="ci-diet">
+          <option value="strict — followed the nutrition plan closely">Strict — followed closely</option>
+          <option value="moderate — mostly followed with some slip-ups" selected>Moderate — mostly OK</option>
+          <option value="loose — struggled to stick to the meal plan">Loose — struggled</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Notes or feedback</label>
+        <textarea id="ci-notes" placeholder="What worked well? What was hard? Any exercises to swap? Anything your body is telling you?"></textarea>
+      </div>
+    </div>
+
+    <button class="btn btn-a" onclick="generateRefresh()" id="refresh-btn">Get my refreshed plan ✦</button>
+
+    <div id="ci-loading" class="loading" style="display:none;">
+      <div class="spinner"></div>
+      <div class="l-msg">Building your refreshed plan...</div>
+      <div class="l-sub">Incorporating your latest metrics & feedback</div>
+    </div>
+    <div id="ci-err" class="err" style="display:none;"></div>
+    <div id="ci-out" class="plan-out" style="display:none; margin-top:14px;"></div>
+  </div>
+</div>
+
+<!-- ════════════════ API KEY MODAL ════════════════ -->
+<div class="modal-ov hidden" id="api-modal" onclick="closeModalOv(event)">
+  <div class="modal">
+    <h3>Set your API key</h3>
+    <p>FitForge uses the Anthropic Claude API to generate your personalized plans. Your key is stored only in your browser — it never leaves your device.</p>
+    <ol>
+      <li>Go to <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> and sign up / log in</li>
+      <li>Click <strong>API Keys</strong> in the left sidebar</li>
+      <li>Click <strong>Create Key</strong>, give it a name, and copy it</li>
+      <li>Paste it below and tap Save</li>
+    </ol>
+    <p style="color:var(--text3); font-size:12px; margin-bottom:14px;">💡 The free tier gives plenty of usage for personal plan generation (a few plans per month).</p>
+    <input type="password" class="modal-input" id="api-input" placeholder="sk-ant-api03-..." />
+    <button class="btn btn-a" onclick="saveKey()" style="margin-bottom:10px;">Save API key</button>
+    <button class="btn btn-g" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- ════════════════ BOTTOM NAV ════════════════ -->
+<nav class="bnav">
+  <button class="ni active" id="nav-profile" onclick="goPage('profile',this)"><span class="ni-icon">◎</span>Profile</button>
+  <button class="ni" id="nav-goals" onclick="goPage('goals',this)"><span class="ni-icon">◈</span>Goals</button>
+  <button class="ni" id="nav-plan" onclick="goPage('plan',this)"><span class="ni-icon">◆</span>My Plan</button>
+  <button class="ni" id="nav-checkin" onclick="goPage('checkin',this)"><span class="ni-icon">◉</span>Check-In</button>
+</nav>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+const S = { apiKey:'', profile:{}, goals:{}, planDone:false, cycleOn:false };
+
+// Load from localStorage
+try {
+  S.apiKey = localStorage.getItem('ff_key') || '';
+  const p = localStorage.getItem('ff_profile');
+  if(p) S.profile = JSON.parse(p);
+  const g = localStorage.getItem('ff_goals');
+  if(g) S.goals = JSON.parse(g);
+  S.planDone = localStorage.getItem('ff_plandone') === '1';
+  if(S.apiKey){ document.getElementById('api-chip').classList.add('ok'); document.getElementById('api-chip').textContent = '✓ API Key'; }
+} catch(e){}
+
+window.addEventListener('DOMContentLoaded', restoreForm);
+
+function restoreForm(){
+  const p = S.profile;
+  const ids = ['name','age','sex','height','weight','bmi','bodyfat','waist','cholesterol','hdl','ldl','triglycerides','hba1c','cycle-len','period-start','cycle-phase'];
+  ids.forEach(id => { const el = document.getElementById(id); if(el && p[id] !== undefined) el.value = p[id]; });
+  if(p.sex === 'female') document.getElementById('cycle-card').style.display = 'block';
+  if(p.cycleOn){ document.getElementById('cycle-tog').checked=true; document.getElementById('cycle-fields').style.display='block'; S.cycleOn=true; updateCyclePreview(); }
+  const g = S.goals;
+  ['g-weight','g-bodyfat','g-waist','g-timeframe','g-primary','g-level','g-days','g-equip','g-diet','g-injuries'].forEach(id=>{ const el=document.getElementById(id); if(el && g[id]) el.value=g[id]; });
+  if(S.planDone){ document.getElementById('plan-empty').style.display='none'; }
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function goPage(name, btn){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pg-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='checkin'){
+    if(S.planDone){ document.getElementById('ci-no-plan').style.display='none'; document.getElementById('ci-main').style.display='block'; }
+    if(S.cycleOn){ document.getElementById('ci-phase-field').style.display='block'; document.getElementById('cycle-mref').style.display='block'; }
+  }
+}
+
+// ── Sex / cycle ───────────────────────────────────────────────────────────────
+function handleSex(){
+  const s = document.getElementById('sex').value;
+  document.getElementById('cycle-card').style.display = s==='female' ? 'block' : 'none';
+}
+function toggleCycle(){
+  S.cycleOn = document.getElementById('cycle-tog').checked;
+  document.getElementById('cycle-fields').style.display = S.cycleOn ? 'block' : 'none';
+  if(S.cycleOn) updateCyclePreview();
+}
+function updateCyclePreview(){
+  const start = document.getElementById('period-start').value;
+  const len = parseInt(document.getElementById('cycle-len').value)||28;
+  const phase = document.getElementById('cycle-phase').value;
+  if(!start && !phase) return;
+  const prev = document.getElementById('cycle-preview');
+  prev.style.display = 'grid';
+  const today = new Date();
+  const startDate = start ? new Date(start) : null;
+  const dayNum = startDate ? Math.max(1, Math.floor((today-startDate)/86400000)+1) : '—';
+  const phaseLabel = {menstrual:'🔴 Menstrual', follicular:'🔵 Follicular', ovulatory:'🟢 Ovulatory', luteal:'🟡 Luteal'};
+  prev.innerHTML = `<div class="ci-item"><div class="ci-lbl">Day of cycle</div><div class="ci-val">Day ${dayNum} of ${len}</div></div><div class="ci-item"><div class="ci-lbl">Current phase</div><div class="ci-val">${phaseLabel[phase]||phase||'—'}</div></div>`;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function gv(id){ return (document.getElementById(id)||{}).value||''; }
+
+function saveProfile(){
+  const ids = ['name','age','sex','height','weight','bmi','bodyfat','waist','cholesterol','hdl','ldl','triglycerides','hba1c','cycle-len','period-start','cycle-phase'];
+  ids.forEach(id=>{ S.profile[id] = gv(id); });
+  S.profile.cycleOn = S.cycleOn;
+  try{ localStorage.setItem('ff_profile', JSON.stringify(S.profile)); }catch(e){}
+  goPage('goals', document.getElementById('nav-goals'));
+}
+
+// ── Build AI prompt ──────────────────────────────────────────────────────────
+function buildPrompt(isRefresh, ci){
+  const p=S.profile, g=S.goals;
+  let prompt = `USER PROFILE:
+Name: ${p.name||'User'} | Sex: ${p.sex} | Age: ${p.age} yrs | Height: ${p.height} cm
+Weight: ${p.weight} kg | BMI: ${p.bmi} | Body fat: ${p.bodyfat}% | Waist: ${p.waist} cm`;
+  if(p.cholesterol) prompt+=`\nBlood panel — Cholesterol: ${p.cholesterol} | HDL: ${p.hdl} | LDL: ${p.ldl} | Triglycerides: ${p.triglycerides} mg/dL`;
+  if(p.hba1c) prompt+=` | HbA1c: ${p.hba1c}%`;
+  prompt+=`\n\nGOALS:
+Primary goal: ${g['g-primary']} | Timeframe: ${g['g-timeframe']}
+Target — Weight: ${g['g-weight']} kg | Body fat: ${g['g-bodyfat']}% | Waist: ${g['g-waist']} cm
+Fitness level: ${g['g-level']} | Gym days/week: ${g['g-days']} | Equipment: ${g['g-equip']}
+Diet preferences: ${g['g-diet']||'none'} | Injuries/limitations: ${g['g-injuries']||'none'}`;
+
+  if(S.cycleOn && p['cycle-phase']){
+    prompt+=`\n\nMENSTRUAL CYCLE TRACKING: ACTIVE
+Cycle length: ${p['cycle-len']||28} days | Last period start: ${p['period-start']} | Current phase: ${p['cycle-phase']}
+
+CYCLE SYNCING — adapt each day of the 14-day plan to the correct phase:
+• MENSTRUAL (days 1–5): Low intensity only. Prioritize yoga, walking, gentle mobility, stretching. No HIIT, no heavy lifting. Nutrition: iron-rich foods (spinach, lentils, red meat, pumpkin seeds), anti-inflammatory meals (turmeric, ginger, omega-3s), magnesium for cramps. Reduce calorie deficit by ~100–150 kcal as BMR is slightly elevated.
+• FOLLICULAR (days 6–13): Rising estrogen boosts energy and neuromuscular coordination. Ideal for learning new movements and progressive overload. Cardio capacity is higher. Nutrition: higher complex carbohydrates for fuel, cruciferous vegetables (broccoli, cauliflower) to support estrogen metabolism, lean protein.
+• OVULATORY (days 14–16): Peak performance window. Program heaviest compound lifts (squats, deadlifts, bench, rows), HIIT, and max-effort cardio. Strength and pain tolerance are highest. Nutrition: high protein (aim for upper range), zinc-rich foods (pumpkin seeds, chickpeas, shellfish), antioxidants, anti-inflammatory foods.
+• LUTEAL (days 17–28): Progesterone rises, body temperature increases, energy and strength decline. Reduce HIIT, shift to moderate-weight strength, steady-state cardio, Pilates, or yoga. Expect cravings. Nutrition: complex carbs to manage blood sugar and cravings (oats, sweet potato, quinoa), magnesium-rich foods (dark chocolate, avocado, bananas, nuts), B6 (salmon, chicken, potatoes), slightly higher calorie allowance (+100–200 kcal). Increase hydration.`;
+  }
+
+  if(isRefresh && ci){
+    prompt+=`\n\nCHECK-IN DATA (last 2 weeks via RingConn / Apple Health):
+Weight: ${ci.weight||'not measured'} kg | Body fat: ${ci.bodyfat||'N/A'}% | Waist: ${ci.waist||'N/A'} cm
+Resting HR: ${ci.rhr||'N/A'} bpm | HRV: ${ci.hrv||'N/A'} ms | SpO2: ${ci.spo2||'N/A'}% | Avg sleep: ${ci.sleep||'N/A'} hrs/night
+Energy: ${ci.energy} | Workout completion: ${ci.done} | Diet adherence: ${ci.diet}
+${S.cycleOn?'Current cycle phase: '+(ci.phase||'not specified'):''}
+Notes: ${ci.notes||'none'}
+
+Adjust intensity based on completion/energy. Acknowledge progress. Introduce exercise variety. If HRV is low or sleep is poor, reduce intensity. If HRV is high, push harder.`;
+  }
+
+  const sections = isRefresh ? `
+# Progress check & adjustments
+Warm, specific acknowledgement of their progress (mention metrics if they improved). Explain how you've adjusted the plan based on their check-in data and RingConn biometrics.
+
+# Updated calorie & macro targets
+Recalculate if weight changed. Show daily calories, protein (g), carbs (g), fat (g).
+
+# Week 1 workout plan (Days 1–7)
+Each day: Day name, Focus (e.g. "Pull — Back & Biceps"), then 5–6 exercises with sets × reps or duration for cardio. Mark rest days clearly.${S.cycleOn?' Include a [Phase: X] note per day explaining how the cycle phase shaped the workout.':''}
+
+# Week 2 workout plan (Days 8–14)
+Same format. Progressive overload or new exercise variety vs Week 1.${S.cycleOn?' Adapt to expected phase transitions.':''}
+
+# Meal plan — Week 1
+Each day: Breakfast, Lunch, Dinner, Snack(s) with approximate calories. Practical and aligned with dietary preferences.${S.cycleOn?' Include cycle-phase-specific foods.':''}
+
+# Meal plan — Week 2
+Same format with variety.
+
+# Focus for the next 2 weeks
+3 specific priorities based on their biometrics, sleep, and feedback.`
+  : `
+# Health summary & key insights
+Brief, warm assessment of their current metrics. Flag any values worth paying attention to (e.g. high LDL, low HRV, elevated HbA1c). What to prioritize.
+
+# Calorie & macro targets
+Daily calorie target with deficit/surplus reasoning. Protein (g), carbs (g), fat (g). Keep it clear and actionable.
+
+# Week 1 workout plan (Days 1–7)
+Each day: Day name, Focus area, 5–6 specific exercises with sets × reps or duration. Mark rest days.${S.cycleOn?' Add a [Phase: X] note per day explaining how the cycle shapes that day\'s intensity.':''}
+
+# Week 2 workout plan (Days 8–14)
+Same format with progressive overload and exercise variation.${S.cycleOn?' Reflect any phase transitions.':''}
+
+# Meal plan — Week 1
+Each day: Breakfast, Lunch, Dinner, Snack(s) with approximate calories. Practical, balanced, and aligned with dietary preferences.${S.cycleOn?' Tailor foods to the cycle phase for each day.':''}
+
+# Meal plan — Week 2
+Same format, with variety.
+
+# Tips for success
+4 specific, actionable tips tailored to their goal, metrics, and situation.`;
+
+  return prompt + `\n\nGenerate the complete, detailed plan. Use markdown with # for main section headers. Be specific with exercise names, sets, reps, and meal ingredients. Be warm, encouraging, and science-backed.\n${sections}`;
+}
+
+// ── Render plan HTML ─────────────────────────────────────────────────────────
+function renderPlan(text){
+  const sections = text.split(/^# /m).filter(Boolean);
+  return sections.map(sec=>{
+    const lines = sec.split('\n');
+    const title = lines[0].trim();
+    const body = lines.slice(1).join('\n')
+      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+      .replace(/^## (.+)$/gm,'<h3>$1</h3>')
+      .replace(/^### (.+)$/gm,'<h3 style="font-size:13px;color:var(--text3);">$1</h3>')
+      .replace(/^- (.+)$/gm,'<li>$1</li>')
+      .replace(/^\d+\. (.+)$/gm,'<li>$1</li>')
+      .replace(/(<li>[\s\S]*?<\/li>)/g, m => `<ul>${m}</ul>`)
+      .replace(/\n{2,}/g,'</p><p>').trim();
+    return `<div class="ps"><h2>${title}</h2><p>${body}</p></div>`;
+  }).join('');
+}
+
+// ── API call ──────────────────────────────────────────────────────────────────
+async function callClaude(msg){
+  if(!S.apiKey) throw new Error('No API key set. Tap "⚙ API Key" in the top right corner to add yours.');
+  const res = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key': S.apiKey,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body: JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:3000,
+      system:'You are an expert personal trainer, nutritionist, and women\'s health specialist. Create detailed, practical, science-based, and encouraging fitness and nutrition plans. Always use markdown with # (single hash) for main section headers only.',
+      messages:[{role:'user',content:msg}]
+    })
+  });
+  const data = await res.json();
+  if(data.error) throw new Error(data.error.message);
+  return data.content.map(c=>c.text||'').join('');
+}
+
+// ── Generate initial plan ─────────────────────────────────────────────────────
+async function generatePlan(){
+  ['g-weight','g-bodyfat','g-waist','g-timeframe','g-primary','g-level','g-days','g-equip','g-diet','g-injuries'].forEach(id=>{ S.goals[id]=gv(id); });
+  try{ localStorage.setItem('ff_goals', JSON.stringify(S.goals)); }catch(e){}
+
+  goPage('plan', document.getElementById('nav-plan'));
+  document.getElementById('plan-empty').style.display='none';
+  document.getElementById('plan-out').style.display='none';
+  document.getElementById('plan-err').style.display='none';
+  document.getElementById('plan-loading').style.display='flex';
+
+  const msgs=['Analyzing your health metrics...','Building your workout split...','Calculating calorie & macro targets...','Writing your meal plan...','Syncing to your cycle phases...','Finalizing your 2-week program...'];
+  let mi=0;
+  const iv = setInterval(()=>{ document.getElementById('plan-lmsg').textContent=msgs[mi++%msgs.length]; },2400);
+
+  try{
+    const result = await callClaude(buildPrompt(false));
+    clearInterval(iv);
+    document.getElementById('plan-loading').style.display='none';
+    const out = document.getElementById('plan-out');
+    out.innerHTML = renderPlan(result);
+    out.style.display='block';
+    S.planDone=true;
+    try{ localStorage.setItem('ff_plandone','1'); }catch(e){}
+  } catch(err){
+    clearInterval(iv);
+    document.getElementById('plan-loading').style.display='none';
+    const e = document.getElementById('plan-err');
+    e.textContent='⚠ '+err.message;
+    e.style.display='block';
+  }
+}
+
+// ── Generate refreshed plan ───────────────────────────────────────────────────
+async function generateRefresh(){
+  const ci = {
+    weight:gv('ci-weight'), bodyfat:gv('ci-bodyfat'), waist:gv('ci-waist'), bmi:gv('ci-bmi'),
+    rhr:gv('ci-rhr'), hrv:gv('ci-hrv'), spo2:gv('ci-spo2'), sleep:gv('ci-sleep'),
+    phase:gv('ci-phase'), energy:gv('ci-energy'), done:gv('ci-done'),
+    diet:gv('ci-diet'), notes:gv('ci-notes')
+  };
+  document.getElementById('refresh-btn').disabled=true;
+  document.getElementById('ci-out').style.display='none';
+  document.getElementById('ci-err').style.display='none';
+  document.getElementById('ci-loading').style.display='flex';
+
+  try{
+    const result = await callClaude(buildPrompt(true, ci));
+    document.getElementById('ci-loading').style.display='none';
+    const out = document.getElementById('ci-out');
+    out.innerHTML = renderPlan(result);
+    out.style.display='block';
+    window.scrollTo({top: out.offsetTop - 80, behavior:'smooth'});
+  } catch(err){
+    document.getElementById('ci-loading').style.display='none';
+    const e = document.getElementById('ci-err');
+    e.textContent='⚠ '+err.message;
+    e.style.display='block';
+  }
+  document.getElementById('refresh-btn').disabled=false;
+}
+
+// ── API Modal ─────────────────────────────────────────────────────────────────
+function openApiModal(){ document.getElementById('api-modal').classList.remove('hidden'); document.getElementById('api-input').value=S.apiKey; }
+function closeModal(){ document.getElementById('api-modal').classList.add('hidden'); }
+function closeModalOv(e){ if(e.target.id==='api-modal') closeModal(); }
+function saveKey(){
+  const k = document.getElementById('api-input').value.trim();
+  if(!k) return;
+  S.apiKey=k;
+  try{ localStorage.setItem('ff_key',k); }catch(e){}
+  document.getElementById('api-chip').classList.add('ok');
+  document.getElementById('api-chip').textContent='✓ API Key';
+  closeModal();
+}
+</script>
+</body>
+</html>
