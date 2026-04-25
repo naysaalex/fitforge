@@ -697,7 +697,7 @@ async function callClaude(msg){
       'anthropic-dangerous-direct-browser-access':'true'
     },
     body: JSON.stringify({
-      model:'claude-sonnet-4-20250514',
+      model:'claude-sonnet-4-5',
       max_tokens:3000,
       system:'You are an expert personal trainer, nutritionist, and women\'s health specialist. Create detailed, practical, science-based, and encouraging fitness and nutrition plans. Always use markdown with # (single hash) for main section headers only.',
       messages:[{role:'user',content:msg}]
