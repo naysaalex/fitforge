@@ -576,7 +576,7 @@ function applyUnits(imperial) {
   var imp = imperial;
   // Labels
   var lbls = {
-    'lbl-height':  imp ? 'Height (ft' in")' : 'Height (cm)',
+    'lbl-height':  imp ? 'Height (ft/in)' : 'Height (cm)',
     'lbl-weight':  imp ? 'Weight (lbs)' : 'Weight (kg)',
     'lbl-waist':   imp ? 'Waist (inches)' : 'Waist (cm)',
     'lbl-g-weight':imp ? 'Goal weight (lbs)' : 'Goal weight (kg)',
@@ -590,7 +590,7 @@ function applyUnits(imperial) {
   });
   // Placeholders
   var phs = {
-    'height': imp ? "e.g. 5'6\"" : 'e.g. 165',
+    'height': imp ? 'e.g. 5ft 6in' : 'e.g. 165',
     'weight': imp ? 'e.g. 155' : 'e.g. 70',
     'waist':  imp ? 'e.g. 32' : 'e.g. 82',
     'g-weight': imp ? 'e.g. 135' : 'e.g. 62',
