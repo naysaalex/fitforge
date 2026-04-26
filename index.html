@@ -185,6 +185,13 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);min-height:100vh
 <div class="pg active" id="pg-profile">
   <h1 class="pg-title">Your Profile</h1>
   <p class="pg-sub">Saved to your account — update every 2 weeks</p>
+  <div style="display:flex;align-items:center;justify-content:space-between;background:var(--s2);border-radius:var(--rs);padding:10px 14px;margin-bottom:14px">
+    <span style="font-size:13px;color:var(--t2)">Unit system</span>
+    <div style="display:flex;background:var(--s3);border-radius:6px;padding:2px;gap:2px">
+      <button id="unit-metric" onclick="setUnits(false)" style="padding:5px 12px;border:none;border-radius:5px;font-size:12px;font-weight:600;font-family:var(--fb);cursor:pointer;background:var(--sf);color:var(--tx);transition:all .15s">Metric</button>
+      <button id="unit-imperial" onclick="setUnits(true)" style="padding:5px 12px;border:none;border-radius:5px;font-size:12px;font-weight:600;font-family:var(--fb);cursor:pointer;background:transparent;color:var(--t3);transition:all .15s">Imperial</button>
+    </div>
+  </div>
   <div class="card">
     <div class="clbl">Personal info</div>
     <div class="fg fg2" style="margin-bottom:10px">
@@ -195,18 +202,18 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);min-height:100vh
       <div class="field"><label>Biological sex</label>
         <select id="sex" onchange="handleSex()"><option value="">Select</option><option value="male">Male</option><option value="female">Female</option></select>
       </div>
-      <div class="field"><label>Height (cm)</label><input type="number" id="height" placeholder="e.g. 165"/></div>
+      <div class="field"><label id="lbl-height">Height (cm)</label><input type="number" id="height" placeholder="e.g. 165"/></div>
     </div>
   </div>
   <div class="card">
     <div class="clbl">Core metrics</div>
     <div class="fg fg2" style="margin-bottom:10px">
-      <div class="field"><label>Weight (kg)</label><input type="number" id="weight" placeholder="e.g. 70" step="0.1"/></div>
+      <div class="field"><label id="lbl-weight">Weight (kg)</label><input type="number" id="weight" placeholder="e.g. 70" step="0.1"/></div>
       <div class="field"><label>BMI</label><input type="number" id="bmi" placeholder="e.g. 24.5" step="0.1"/></div>
     </div>
     <div class="fg fg2">
       <div class="field"><label>Body fat %</label><input type="number" id="bodyfat" placeholder="e.g. 28" step="0.1"/></div>
-      <div class="field"><label>Waist (cm)</label><input type="number" id="waist" placeholder="e.g. 82" step="0.1"/></div>
+      <div class="field"><label id="lbl-waist">Waist (in)</label><input type="number" id="waist" placeholder="e.g. 82" step="0.1"/></div>
     </div>
   </div>
   <div class="card">
@@ -257,9 +264,9 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);min-height:100vh
   <div class="card">
     <div class="clbl">Target metrics</div>
     <div class="fg fg3" style="margin-bottom:10px">
-      <div class="field"><label>Goal weight (kg)</label><input type="number" id="g-weight" placeholder="e.g. 62" step="0.1"/></div>
+      <div class="field"><label id="lbl-g-weight">Goal weight (kg)</label><input type="number" id="g-weight" placeholder="e.g. 62" step="0.1"/></div>
       <div class="field"><label>Goal body fat %</label><input type="number" id="g-bodyfat" placeholder="e.g. 22" step="0.1"/></div>
-      <div class="field"><label>Goal waist (cm)</label><input type="number" id="g-waist" placeholder="e.g. 76" step="0.1"/></div>
+      <div class="field"><label id="lbl-g-waist">Goal waist (in)</label><input type="number" id="g-waist" placeholder="e.g. 76" step="0.1"/></div>
     </div>
     <div class="field"><label>Timeframe</label>
       <select id="g-timeframe"><option value="3 months">3 months</option><option value="6 months" selected>6 months</option><option value="12 months">12 months</option><option value="flexible">No rush</option></select>
@@ -371,11 +378,11 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);min-height:100vh
     <div class="card">
       <div class="clbl">Updated measurements <span class="opt">fill what you have</span></div>
       <div class="fg fg2" style="margin-bottom:10px">
-        <div class="field"><label>New weight (kg)</label><input type="number" id="ci-wt" placeholder="From Apple Health" step="0.1"/></div>
+        <div class="field"><label id="lbl-ci-wt">New weight (kg)</label><input type="number" id="ci-wt" placeholder="From Apple Health" step="0.1"/></div>
         <div class="field"><label>New body fat %</label><input type="number" id="ci-bf" placeholder="If available" step="0.1"/></div>
       </div>
       <div class="fg fg2" style="margin-bottom:10px">
-        <div class="field"><label>Waist (cm)</label><input type="number" id="ci-ws" placeholder="Tape measure" step="0.1"/></div>
+        <div class="field"><label id="lbl-ci-ws">Waist (in)</label><input type="number" id="ci-ws" placeholder="Tape measure" step="0.1"/></div>
         <div class="field"><label>BMI</label><input type="number" id="ci-bm" placeholder="If available" step="0.1"/></div>
       </div>
       <div class="fg fg2" style="margin-bottom:10px">
@@ -474,7 +481,7 @@ const fbApp=initializeApp(fbCfg);
 const auth=getAuth(fbApp);
 const db=getFirestore(fbApp);
 
-window.FF={user:null,apiKey:'',profile:{},goals:{},planData:null,cycleOn:false};
+window.FF={user:null,apiKey:'',profile:{},goals:{},planData:null,cycleOn:false,useImperial:false};
 
 // ── Auth state ────────────────────────────────────────────────────────────────
 onAuthStateChanged(auth,async u=>{
@@ -501,7 +508,7 @@ window.switchAuth=m=>{
 window.doSignup=async()=>{
   const e=document.getElementById('se').value.trim(),p=document.getElementById('sp').value,p2=document.getElementById('sp2').value,el=document.getElementById('serr');
   if(p!==p2){el.textContent='Passwords do not match.';el.style.display='block';return;}
-  try{el.style.display='none';const c=await createUserWithEmailAndPassword(auth,e,p);await setDoc(doc(db,'users',c.user.uid),{email:e,createdAt:new Date().toISOString(),profile:{},goals:{},planData:null,apiKey:''});}
+  try{el.style.display='none';const c=await createUserWithEmailAndPassword(auth,e,p);await setDoc(doc(db,'users',c.user.uid),{email:e,createdAt:new Date().toISOString(),profile:{},goals:{},planData:null,apiKey:'',useImperial:false});}
   catch(err){el.textContent=err.message;el.style.display='block';}
 };
 
@@ -519,7 +526,7 @@ async function loadData(){
     const s=await getDoc(doc(db,'users',FF.user.uid));
     if(s.exists()){
       const d=s.data();
-      FF.profile=d.profile||{};FF.goals=d.goals||{};FF.apiKey=d.apiKey||'';FF.planData=d.planData||null;FF.cycleOn=FF.profile.cycleOn||false;
+      FF.profile=d.profile||{};FF.goals=d.goals||{};FF.apiKey=d.apiKey||'';FF.planData=d.planData||null;FF.cycleOn=FF.profile.cycleOn||false;FF.useImperial=d.useImperial||false;
       if(FF.apiKey){document.getElementById('api-chip').classList.add('ok');document.getElementById('api-chip').textContent='✓ API Key';}
       restoreForm();
       if(FF.planData)renderPlan();
@@ -538,6 +545,7 @@ function restoreForm(){
   const g=FF.goals;
   ['g-weight','g-bodyfat','g-waist','g-timeframe','g-primary','g-level','g-days','g-equip','g-diet','g-injuries','g-cookstyle','g-prepday','g-variety','g-cooktime','g-dislikes'].forEach(id=>{const el=document.getElementById(id);if(el&&g[id])el.value=g[id];});
   if(FF.planData){document.getElementById('ci-nop').style.display='none';document.getElementById('ci-main').style.display='block';if(FF.cycleOn)setTimeout(showAutoPhase,100);}
+  applyUnits(FF.useImperial);
 }
 
 // ── Cycle ─────────────────────────────────────────────────────────────────────
@@ -562,6 +570,54 @@ window.saveProfile=async()=>{
 
 function gv(id){return document.getElementById(id)?.value||'';}
 
+
+// ── Unit system toggle ────────────────────────────────────────────────────────────
+function applyUnits(imperial) {
+  var imp = imperial;
+  // Labels
+  var lbls = {
+    'lbl-height':  imp ? 'Height (ft' in")' : 'Height (cm)',
+    'lbl-weight':  imp ? 'Weight (lbs)' : 'Weight (kg)',
+    'lbl-waist':   imp ? 'Waist (inches)' : 'Waist (cm)',
+    'lbl-g-weight':imp ? 'Goal weight (lbs)' : 'Goal weight (kg)',
+    'lbl-g-waist': imp ? 'Goal waist (inches)' : 'Goal waist (cm)',
+    'lbl-ci-wt':   imp ? 'New weight (lbs)' : 'New weight (kg)',
+    'lbl-ci-ws':   imp ? 'Waist (inches)' : 'Waist (cm)'
+  };
+  Object.entries(lbls).forEach(function(e) {
+    var el = document.getElementById(e[0]);
+    if (el) el.textContent = e[1];
+  });
+  // Placeholders
+  var phs = {
+    'height': imp ? "e.g. 5'6\"" : 'e.g. 165',
+    'weight': imp ? 'e.g. 155' : 'e.g. 70',
+    'waist':  imp ? 'e.g. 32' : 'e.g. 82',
+    'g-weight': imp ? 'e.g. 135' : 'e.g. 62',
+    'g-waist':  imp ? 'e.g. 28' : 'e.g. 76',
+    'ci-wt': imp ? 'From Apple Health (lbs)' : 'From Apple Health (kg)',
+    'ci-ws': imp ? 'Tape measure (inches)' : 'Tape measure (cm)'
+  };
+  Object.entries(phs).forEach(function(e) {
+    var el = document.getElementById(e[0]);
+    if (el) el.placeholder = e[1];
+  });
+  // Button states
+  var mb = document.getElementById('unit-metric');
+  var ib = document.getElementById('unit-imperial');
+  if (mb && ib) {
+    mb.style.background = imp ? 'transparent' : 'var(--sf)';
+    mb.style.color = imp ? 'var(--t3)' : 'var(--tx)';
+    ib.style.background = imp ? 'var(--sf)' : 'transparent';
+    ib.style.color = imp ? 'var(--tx)' : 'var(--t3)';
+  }
+}
+
+window.setUnits = async function(imperial) {
+  FF.useImperial = imperial;
+  applyUnits(imperial);
+  await fbSave({useImperial: imperial});
+};
 
 // Cycle phase calculator
 function calcPhaseForDay(periodStart, cycleLen, targetDate) {
@@ -622,10 +678,13 @@ window.togglePhaseOverride = function() {
 // ── Prompt builder ────────────────────────────────────────────────────────────
 function buildPrompt(isRefresh,ci){
   const p=FF.profile,g=FF.goals;
-  let pr=`USER: ${p.name||'User'} | ${p.sex} | Age ${p.age} | ${p.height}cm | ${p.weight}kg | BMI ${p.bmi} | BF ${p.bodyfat}% | Waist ${p.waist}cm`;
+  var units=FF.useImperial?'imperial':'metric';
+  var wUnit=FF.useImperial?'lbs':'kg';
+  var mUnit=FF.useImperial?'inches':'cm';
+  let pr=`USER: ${p.name||'User'} | ${p.sex} | Age ${p.age} | Height: ${p.height}${FF.useImperial?'':'cm'} | Weight: ${p.weight}${wUnit} | BMI ${p.bmi} | BF ${p.bodyfat}% | Waist: ${p.waist}${mUnit} | Units: ${units}`;
   if(p.cholesterol)pr+=`\nBlood: Chol ${p.cholesterol} | HDL ${p.hdl} | LDL ${p.ldl} | Trig ${p.triglycerides} mg/dL`;
   if(p.hba1c)pr+=` | HbA1c ${p.hba1c}%`;
-  pr+=`\nGOAL: ${g['g-primary']} | ${g['g-timeframe']} | Target ${g['g-weight']}kg/${g['g-bodyfat']}%BF/${g['g-waist']}cm waist | ${g['g-level']} | ${g['g-days']}d/wk | ${g['g-equip']} | Diet: ${g['g-diet']||'none'} | Injuries: ${g['g-injuries']||'none'}`;
+  pr+=`\nGOAL: ${g['g-primary']} | ${g['g-timeframe']} | Target ${g['g-weight']}${wUnit}/${g['g-bodyfat']}%BF/${g['g-waist']}${mUnit} waist | ${g['g-level']} | ${g['g-days']}d/wk | ${g['g-equip']} | Diet: ${g['g-diet']||'none'} | Injuries: ${g['g-injuries']||'none'}`;
   pr+=`\nMEAL PREP: ${g['g-cookstyle']} | Prep day: ${g['g-prepday']} | Variety: ${g['g-variety']} | Cook time: ${g['g-cooktime']} | Avoid: ${g['g-dislikes']||'none'}`;
   if(FF.cycleOn&&p['period-start']){
     const cycleLen=parseInt(p['cycle-len'])||28;
