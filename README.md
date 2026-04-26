@@ -30,41 +30,6 @@ An AI-powered personal health and fitness web app. Generates personalized 2-week
 
 ---
 
-## Setup
-
-### 1. Firebase
-1. Create a project at [console.firebase.google.com](https://console.firebase.google.com)
-2. Add a web app → copy the `firebaseConfig` → paste into `index.html`
-3. Enable **Firestore Database** (start in test mode)
-4. Enable **Authentication → Email/Password**
-
-### 2. Firestore security rules
-Replace default rules with:
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
-}
-```
-
-### 3. Restrict your Firebase API key
-In [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials → restrict your key to HTTP referrer `https://yourusername.github.io/*`
-
-### 4. Deploy
-1. Upload `index.html` to your GitHub repo
-2. Go to **Settings → Pages → Branch: main / root** → Save
-3. Your app is live at `https://yourusername.github.io/fitforge`
-
-### 5. Add to phone home screen
-- **iPhone:** Open in Safari → Share → Add to Home Screen
-- **Android:** Open in Chrome → menu → Add to Home Screen
-
----
-
 ## First use
 
 1. Create an account in the app
@@ -111,10 +76,10 @@ RingConn syncs to Apple Health. At each 2-week check-in, pull your metrics from 
 |---|---|
 | GitHub Pages | Free |
 | Firebase Spark plan | Free |
-| Claude API | ~$0.02–0.05 per plan generation |
+| Claude API | ~$0.05–0.15 per plan generation |
 | Pexels API | Free |
 
-A $5 Anthropic credit covers roughly 100–250 plan generations. Each user pays only for their own usage via their own API key.
+A $5 Anthropic credit covers roughly 50–250 plan generations. Each user pays only for their own usage via their own API key.
 
 ---
 
