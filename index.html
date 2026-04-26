@@ -72,7 +72,7 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);min-height:100vh
 .atab.active{background:var(--sf);color:var(--tx)}
 /* Plan view */
 .vtog{display:flex;background:var(--s2);border-radius:var(--rs);padding:3px;margin-bottom:16px}
-.vbtn{flex:1;padding:8px 12px;border:none;background:transparent;color:var(--t2);font-size:13px;font-weight:600;font-family:var(--fb);border-radius:6px;cursor:pointer;transition:all .15s}
+.vbtn{flex:1;padding:7px 4px;border:none;background:transparent;color:var(--t2);font-size:11px;font-weight:600;font-family:var(--fb);border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap}
 .vbtn.active{background:var(--sf);color:var(--tx)}
 .plan-bar{background:var(--s2);border-radius:var(--rs);padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
 .pbi{font-size:13px;color:var(--t2)}.pbi strong{color:var(--ac)}
@@ -340,9 +340,13 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);min-height:100vh
     <div class="vtog">
       <button class="vbtn active" id="vt-cal" onclick="switchView('cal')">📅 Calendar</button>
       <button class="vbtn" id="vt-list" onclick="switchView('list')">☰ List</button>
+      <button class="vbtn" id="vt-meals" onclick="switchView('meals')">🍽️ Meals</button>
+      <button class="vbtn" id="vt-summary" onclick="switchView('summary')">📊 Summary</button>
     </div>
     <div id="view-cal"></div>
     <div id="view-list" style="display:none"></div>
+    <div id="view-meals" style="display:none"></div>
+    <div id="view-summary" style="display:none"></div>
   </div>
 </div>
 
@@ -691,7 +695,7 @@ function renderPlan(){
   const fmt=dt=>dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});
   document.getElementById('pdr').textContent=`${fmt(gen)} – ${fmt(end)}`;
   document.getElementById('pcd').textContent=dl>0?`${dl} days remaining`:'Plan complete — check in!';
-  buildCalView(d);buildListView(d);
+  buildCalView(d);buildListView(d);buildMealsView(d);buildSummaryView(d);
   document.getElementById('plan-ready').style.display='block';
 }
 
@@ -752,36 +756,143 @@ function buildListView(d){
     });
     h+='</div>';
   });
-  // Summary card
-  if(d.summary||d.calories||d.tips){
-    h+=`<div class="card"><div class="clbl">Plan summary</div>`;
-    if(d.summary)h+=`<p style="font-size:14px;color:var(--t2);line-height:1.75;margin-bottom:12px">${d.summary}</p>`;
-    if(d.calories){
-      h+=`<div style="background:var(--s2);border-radius:var(--rs);padding:12px;margin-bottom:12px"><div style="font-size:11px;color:var(--t3);font-weight:600;margin-bottom:8px;letter-spacing:.06em">DAILY TARGETS</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center">
-        <div><div style="font-size:20px;font-weight:600;color:var(--ac)">${d.calories.daily}</div><div style="font-size:11px;color:var(--t3)">kcal</div></div>
-        <div><div style="font-size:20px;font-weight:600;color:var(--bl)">${d.calories.protein}g</div><div style="font-size:11px;color:var(--t3)">protein</div></div>
-        <div><div style="font-size:20px;font-weight:600;color:var(--am)">${d.calories.carbs}g</div><div style="font-size:11px;color:var(--t3)">carbs</div></div>
-        <div><div style="font-size:20px;font-weight:600;color:var(--pk)">${d.calories.fat}g</div><div style="font-size:11px;color:var(--t3)">fat</div></div>
-      </div>${d.calories.note?`<div style="font-size:12px;color:var(--t3);margin-top:8px">${d.calories.note}</div>`:''}</div>`;
-    }
-    if(d.tips&&d.tips.length){
-      h+='<div style="display:flex;flex-direction:column;gap:8px">';
-      d.tips.forEach((t,i)=>h+=`<div style="display:flex;gap:10px;font-size:13px;color:var(--t2)"><span style="color:var(--ac);font-weight:700;min-width:18px">${i+1}.</span><span>${t}</span></div>`);
-      h+='</div>';
-    }
-    h+='</div>';
-  }
   document.getElementById('view-list').innerHTML=h;
 }
 
 window.togLD=idx=>{document.getElementById('ldb-'+idx).classList.toggle('open');document.getElementById('arr-'+idx).classList.toggle('open');};
 
+// ── Meals overview view ────────────────────────────────────────────────
+function buildMealsView(d){
+  const days=d.days||[];
+  const mealTypes=[['breakfast','☀️ Breakfast'],['lunch','☀️☀️ Lunch'],['dinner','🌙 Dinner'],['snack','⚡ Snack']];
+
+  // Build meal frequency map for prep summary
+  const mealCount={};
+  days.forEach(day=>{
+    if(!day.meals)return;
+    Object.values(day.meals).forEach(m=>{
+      if(!m||!m.name)return;
+      const key=m.name.trim();
+      if(!mealCount[key]){mealCount[key]={count:0,prepNote:m.prepNote||'',calories:m.calories,days:[]};}
+      mealCount[key].count++;
+      mealCount[key].days.push(day.dayName?day.dayName.slice(0,3):'D'+day.day);
+    });
+  });
+
+  // Meal prep summary — meals appearing 2+ times
+  const batchMeals=Object.entries(mealCount).filter(([,v])=>v.count>=2).sort((a,b)=>b[1].count-a[1].count);
+
+  let h='';
+
+  // Prep summary card
+  if(batchMeals.length){
+    h+=`<div class="card"><div class="clbl">🍳 Meal prep summary</div>`;
+    h+=`<div style="font-size:13px;color:var(--t2);margin-bottom:12px;line-height:1.6">Meals that repeat across the week — batch cook these on your prep day to save time.</div>`;
+    batchMeals.forEach(([name,info])=>{
+      const url=`https://www.allrecipes.com/search?q=${encodeURIComponent(name)}`;
+      h+=`<div style="background:var(--s2);border-radius:var(--rs);padding:12px;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:500;color:var(--tx);margin-bottom:3px">${name}</div>
+          <div style="font-size:12px;color:var(--t3);margin-bottom:4px">~${info.calories} kcal &nbsp;&middot;&nbsp; ${info.days.join(', ')}</div>
+          ${info.prepNote?`<div style="font-size:12px;color:var(--am)">🥘 ${info.prepNote}</div>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          <div style="background:var(--adim);border:.5px solid rgba(200,240,110,.25);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;color:var(--ac);">×${info.count}</div>
+          <a href="${url}" target="_blank" class="mlink" style="padding:4px 10px">🔗 Recipe</a>
+        </div>
+      </div>`;
+    });
+    h+='</div>';
+  }
+
+  // Week-by-week meal breakdown
+  [1,2].forEach(wk=>{
+    const wdays=days.filter(day=>day.week===wk);
+    h+=`<div class="card"><div class="clbl">Week ${wk} — All meals</div>`;
+    wdays.forEach(day=>{
+      const phE={menstrual:'🔴',follicular:'🔵',ovulatory:'🟢',luteal:'🟡'};
+      h+=`<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:.5px solid var(--bd)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="font-size:13px;font-weight:600;color:var(--ac);min-width:28px">D${day.day}</div>
+          <div style="font-size:13px;font-weight:500">${day.dayName}</div>
+          ${day.isRest?'<span style="font-size:11px;color:var(--t3);background:var(--s2);padding:2px 8px;border-radius:10px">Rest</span>':''}
+          ${day.phase?`<span style="font-size:11px;color:var(--t2)">${phE[day.phase]||''} ${day.phase}</span>`:''}
+        </div>`;
+      if(day.isRest&&!day.meals){
+        h+=`<div style="font-size:13px;color:var(--t3);padding-left:36px">Recovery day — focus on hydration</div>`;
+      } else if(day.meals){
+        mealTypes.forEach(([key,lbl])=>{
+          const m=day.meals[key];if(!m)return;
+          const url=`https://www.allrecipes.com/search?q=${encodeURIComponent(m.searchQuery||m.name)}`;
+          h+=`<div style="display:flex;align-items:flex-start;gap:10px;padding-left:36px;margin-bottom:6px">
+            <div style="min-width:70px;font-size:11px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding-top:2px">${key}</div>
+            <div style="flex:1">
+              <div style="font-size:13px;color:var(--tx);margin-bottom:2px">${m.name}</div>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <span style="font-size:11px;color:var(--t3)">~${m.calories} kcal</span>
+                ${m.prepNote?`<span style="font-size:11px;color:var(--am)">🥘 ${m.prepNote}</span>`:''}
+                <a href="${url}" target="_blank" style="font-size:11px;color:var(--bl);text-decoration:none">🔗 recipe</a>
+              </div>
+            </div>
+          </div>`;
+        });
+      }
+      h+='</div>';
+    });
+    h+='</div>';
+  });
+
+  document.getElementById('view-meals').innerHTML=h;
+}
+
+// ── Summary view ─────────────────────────────────────────────────────────────
+function buildSummaryView(d){
+  let h='';
+  if(d.summary){
+    h+=`<div class="card"><div class="clbl">📋 Health assessment</div><p style="font-size:14px;color:var(--t2);line-height:1.78">${d.summary}</p></div>`;
+  }
+  if(d.calories){
+    h+=`<div class="card"><div class="clbl">🎯 Daily targets</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px">
+        <div style="background:var(--s2);border-radius:var(--rs);padding:14px;text-align:center">
+          <div style="font-size:26px;font-weight:600;color:var(--ac)">${d.calories.daily}</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:3px;text-transform:uppercase;letter-spacing:.06em">Calories / day</div>
+        </div>
+        <div style="background:var(--s2);border-radius:var(--rs);padding:14px;text-align:center">
+          <div style="font-size:26px;font-weight:600;color:var(--bl)">${d.calories.protein}g</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:3px;text-transform:uppercase;letter-spacing:.06em">Protein / day</div>
+        </div>
+        <div style="background:var(--s2);border-radius:var(--rs);padding:14px;text-align:center">
+          <div style="font-size:26px;font-weight:600;color:var(--am)">${d.calories.carbs}g</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:3px;text-transform:uppercase;letter-spacing:.06em">Carbs / day</div>
+        </div>
+        <div style="background:var(--s2);border-radius:var(--rs);padding:14px;text-align:center">
+          <div style="font-size:26px;font-weight:600;color:var(--pk)">${d.calories.fat}g</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:3px;text-transform:uppercase;letter-spacing:.06em">Fat / day</div>
+        </div>
+      </div>
+      ${d.calories.note?`<div style="font-size:13px;color:var(--t3);line-height:1.65">${d.calories.note}</div>`:''}
+    </div>`;
+  }
+  if(d.tips&&d.tips.length){
+    h+=`<div class="card"><div class="clbl">✨ Tips for success</div><div style="display:flex;flex-direction:column;gap:12px">`;
+    d.tips.forEach((t,i)=>{
+      h+=`<div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:24px;height:24px;border-radius:50%;background:var(--adim);border:.5px solid rgba(200,240,110,.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--ac);flex-shrink:0;margin-top:1px">${i+1}</div>
+        <div style="font-size:14px;color:var(--t2);line-height:1.72;flex:1">${t}</div>
+      </div>`;
+    });
+    h+='</div></div>';
+  }
+  document.getElementById('view-summary').innerHTML=h;
+}
+
 // ── View toggle ───────────────────────────────────────────────────────────────
 window.switchView=v=>{
-  document.getElementById('view-cal').style.display=v==='cal'?'block':'none';
-  document.getElementById('view-list').style.display=v==='list'?'block':'none';
-  document.getElementById('vt-cal').classList.toggle('active',v==='cal');
-  document.getElementById('vt-list').classList.toggle('active',v==='list');
+  ['cal','list','meals','summary'].forEach(n=>{
+    document.getElementById('view-'+n).style.display=v===n?'block':'none';
+    document.getElementById('vt-'+n).classList.toggle('active',v===n);
+  });
 };
 
 // ── Generate refresh ──────────────────────────────────────────────────────────
