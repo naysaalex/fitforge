@@ -1,169 +1,126 @@
-[README.md](https://github.com/user-attachments/files/27088787/README.md)
-# FitForge — AI-Powered Personal Health & Fitness System
+# FitForge
 
-A mobile-first web app that generates personalized 2-week workout and meal plans using AI, with built-in support for menstrual cycle syncing via RingConn and Apple Health.
-
----
-
-## Features
-
-- **AI-generated 2-week plans** — personalized workout splits and daily meal suggestions based on your current metrics and goals
-- **Menstrual cycle syncing** — workouts and nutrition adapt day-by-day across all 4 phases (menstrual, follicular, ovulatory, luteal)
-- **RingConn + Apple Health integration** — step-by-step guide to pull your latest biometrics (HRV, resting heart rate, SpO2, sleep, body fat) directly from Apple Health at each check-in
-- **Biweekly check-in system** — update your metrics every 2 weeks and get a refreshed, progressively harder plan
-- **Blood panel awareness** — input cholesterol, HDL, LDL, triglycerides, and HbA1c for a more tailored health assessment
-- **Saves your data locally** — your profile, goals, and API key are stored in your browser so you never have to re-enter them
-- **Works as a home screen app** — add to your iPhone or Android home screen for a native app-like experience
+An AI-powered personal health and fitness web app. Generates personalized 2-week workout and meal plans, adapts to your menstrual cycle, and saves everything to your account in the cloud.
 
 ---
 
-## Live Demo
+## What it does
 
-> `https://yourusername.github.io/fitforge`
-> *(replace `yourusername` with your GitHub username)*
+- **AI-generated 2-week plans** — personalized workouts and daily meals based on your metrics, goals, and meal prep preferences
+- **Cycle syncing** — automatically calculates your menstrual phase day-by-day across the full 14-day plan and adapts workouts and nutrition accordingly
+- **Calendar & list view** — toggle between a 14-day calendar grid and a scrollable list; tap any day to expand workouts and meals
+- **Workout images** — real exercise photos loaded from Pexels for each workout
+- **Recipe links** — every meal links to an AllRecipes search
+- **Biweekly check-in** — update your metrics, correct your cycle phase if needed, and regenerate a fresh plan
+- **Cloud storage** — all data saved to Firebase; persists across devices and browser refreshes
+- **Per-user accounts** — each user signs in with their own email/password and provides their own Claude API key
+
+---
+
+## Tech stack
+
+| Layer | Tool |
+|---|---|
+| Hosting | GitHub Pages (free) |
+| Auth & database | Firebase Authentication + Cloud Firestore |
+| AI plan generation | Anthropic Claude API (`claude-sonnet-4-5`) |
+| Workout images | Pexels API (free) |
+| Recipe links | AllRecipes search |
+| Frontend | Vanilla HTML / CSS / JS — no frameworks |
 
 ---
 
 ## Setup
 
-### 1. Get an Anthropic API Key
+### 1. Firebase
+1. Create a project at [console.firebase.google.com](https://console.firebase.google.com)
+2. Add a web app → copy the `firebaseConfig` → paste into `index.html`
+3. Enable **Firestore Database** (start in test mode)
+4. Enable **Authentication → Email/Password**
 
-This app uses the Claude API to generate your plans.
+### 2. Firestore security rules
+Replace default rules with:
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+```
 
-1. Go to [console.anthropic.com](https://console.anthropic.com) and create an account
-2. Click **API Keys** in the left sidebar
-3. Click **Create Key**, name it anything, and copy it
-4. Open the app, tap **⚙ API Key** in the top right, paste your key, and save
+### 3. Restrict your Firebase API key
+In [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials → restrict your key to HTTP referrer `https://yourusername.github.io/*`
 
-Your key is stored only in your browser's local storage — it never leaves your device.
+### 4. Deploy
+1. Upload `index.html` to your GitHub repo
+2. Go to **Settings → Pages → Branch: main / root** → Save
+3. Your app is live at `https://yourusername.github.io/fitforge`
 
-### 2. Deploy to GitHub Pages
-
-1. Upload `index.html` to this repository (drag and drop via GitHub's web UI)
-2. Go to **Settings → Pages**
-3. Under **Branch**, select `main` and folder `/ (root)`, then click **Save**
-4. Wait ~60 seconds — your site will be live at `https://yourusername.github.io/fitforge`
-
-### 3. Add to your phone home screen
-
-**iPhone (Safari only):**
-1. Open your GitHub Pages URL in Safari
-2. Tap the **Share** button (box with arrow)
-3. Scroll down and tap **Add to Home Screen**
-4. Name it FitForge and tap **Add**
-
-**Android (Chrome):**
-1. Open your GitHub Pages URL in Chrome
-2. Tap the three-dot menu
-3. Tap **Add to Home screen**
-
----
-
-## How to Use
-
-### First time
-1. **Profile tab** — enter your name, age, sex, height, and current metrics (weight, BMI, body fat %, waist). Blood panel values are optional but improve plan accuracy.
-2. **Cycle tracking** (women only) — toggle on menstrual cycle tracking, enter your cycle length, last period start date, and current phase.
-3. **Goals tab** — set your target metrics, primary fitness goal, fitness level, gym days per week, equipment access, and any dietary preferences or injuries.
-4. Tap **Generate my 2-week plan** — your personalized plan appears in the Plan tab.
-
-### Every 2 weeks (Check-In tab)
-1. Open Apple Health on your iPhone and screenshot your summary
-2. Fill in your updated metrics (weight, HRV, resting HR, SpO2, sleep, body fat)
-3. Rate how the last 2 weeks went (energy, workout completion, diet adherence)
-4. Tap **Get my refreshed plan** — the AI adjusts intensity and variety based on your progress and biometrics
+### 5. Add to phone home screen
+- **iPhone:** Open in Safari → Share → Add to Home Screen
+- **Android:** Open in Chrome → menu → Add to Home Screen
 
 ---
 
-## Menstrual Cycle Syncing
+## First use
 
-When cycle tracking is enabled, every day of your 2-week plan is adapted to your current cycle phase:
+1. Create an account in the app
+2. Tap **⚙ API Key** → enter your Anthropic Claude API key (from [console.anthropic.com](https://console.anthropic.com))
+3. Fill in **Profile** — metrics, cycle tracking if applicable
+4. Fill in **Goals** — targets, training setup, meal prep preferences
+5. Tap **Generate my 2-week plan**
 
-| Phase | Days | Training | Nutrition focus |
+---
+
+## Menstrual cycle syncing
+
+When cycle tracking is enabled, the app calculates the exact phase for each of the 14 days using your last period date and cycle length — including mid-plan phase transitions.
+
+| Phase | Days | Workout | Nutrition |
 |---|---|---|---|
-| 🔴 Menstrual | 1–5 | Low intensity — yoga, walking, mobility | Iron-rich foods, anti-inflammatory, magnesium |
-| 🔵 Follicular | 6–13 | Rising intensity — progressive overload, new movements | Complex carbs, cruciferous vegetables, lean protein |
-| 🟢 Ovulatory | 14–16 | Peak performance — heavy compounds, HIIT | High protein, zinc-rich foods, antioxidants |
-| 🟡 Luteal | 17–28 | Moderate — steady-state cardio, lighter strength | Complex carbs, magnesium, B6, slightly higher calories |
+| 🔴 Menstrual | 1–5 | Yoga, walking, mobility only | Iron, magnesium, anti-inflammatory |
+| 🔵 Follicular | 6–13 | Progressive overload | Complex carbs, cruciferous veg |
+| 🟢 Ovulatory | 14–16 | Heavy compounds, HIIT | High protein, zinc, antioxidants |
+| 🟡 Luteal | 17–28 | Moderate, steady-state | Magnesium, B6, complex carbs, +150 kcal |
 
-Your RingConn ring tracks your cycle via skin temperature and heart rate data and syncs this to Apple Health. At each check-in, you can update your current phase so the next plan reflects where you are in your cycle.
+At check-in, the app shows your auto-calculated current phase with a correction toggle if the timing is off. Corrections update your period date permanently for future plans.
 
 ---
 
-## RingConn + Apple Health: Where to Find Each Metric
+## RingConn + Apple Health
 
-| Metric | Path in Apple Health |
+RingConn syncs to Apple Health. At each 2-week check-in, pull your metrics from the Health app:
+
+| Metric | Location |
 |---|---|
 | Weight | Browse → Body Measurements → Weight |
-| Body Fat % | Browse → Body Measurements → Body Fat Percentage |
-| Resting Heart Rate | Browse → Heart → Resting Heart Rate |
+| Body Fat % | Browse → Body Measurements → Body Fat % |
+| Resting HR | Browse → Heart → Resting Heart Rate |
 | HRV | Browse → Heart → Heart Rate Variability |
-| Blood Oxygen (SpO2) | Browse → Respiratory → Blood Oxygen |
-| Average Sleep | Browse → Sleep → Sleep Duration |
-| Cycle Phase | Browse → Cycle Tracking — or check the RingConn app directly |
-| Waist circumference | Measure manually with a tape measure (not tracked in Apple Health) |
-
-**Pro tip:** Take a screenshot of your Apple Health Summary screen before opening the app — all your key numbers are visible in one place.
+| SpO2 | Browse → Respiratory → Blood Oxygen |
+| Sleep | Browse → Sleep → Sleep Duration |
 
 ---
 
-## Metrics Tracked
+## Cost
 
-**Core (entered manually or from Apple Health):**
-- Weight, BMI, body fat %, waist circumference
+| Item | Cost |
+|---|---|
+| GitHub Pages | Free |
+| Firebase Spark plan | Free |
+| Claude API | ~$0.02–0.05 per plan generation |
+| Pexels API | Free |
 
-**Biometrics from RingConn via Apple Health:**
-- Resting heart rate, HRV, SpO2, average sleep duration
-
-**Optional blood panel:**
-- Total cholesterol, HDL, LDL, triglycerides, HbA1c
-
-**Cycle data (women):**
-- Cycle length, last period start date, current phase
+A $5 Anthropic credit covers roughly 100–250 plan generations. Each user pays only for their own usage via their own API key.
 
 ---
 
 ## Privacy
 
-- **No account required** — the app runs entirely in your browser
-- **No server** — there is no backend; all data stays on your device
-- **API key stored locally** — your Anthropic key is saved in your browser's `localStorage` and is never transmitted anywhere except directly to Anthropic's API
-- **No tracking or analytics** — this app collects zero data about you
-
----
-
-## Updating the App
-
-When a new version of `index.html` is available:
-
-1. Go to your `fitforge` repository on GitHub
-2. Click on `index.html`
-3. Click the pencil (edit) icon, or use **Add file → Upload files** to replace it
-4. Commit the change — GitHub Pages will update your live site within ~60 seconds
-
-Your saved profile, goals, and API key will persist across updates since they're stored in your browser.
-
----
-
-## Tech Stack
-
-- **Vanilla HTML/CSS/JavaScript** — no frameworks, no build step, no dependencies
-- **Anthropic Claude API** (`claude-sonnet-4-20250514`) — plan generation
-- **Browser localStorage** — profile and settings persistence
-- **GitHub Pages** — free static site hosting
-
----
-
-## Roadmap / Future Ideas
-
-- [ ] Native iOS app for direct Apple Health API access (automatic data sync)
-- [ ] Export plan as PDF
-- [ ] Progress charts over time
-- [ ] Barcode scanning for meal logging
-- [ ] Integration with MyFitnessPal or Cronometer
-
----
-
-## License
-
-Personal use. Built with [Claude](https://claude.ai) by Anthropic.
+- Users can only read and write their own Firestore data (enforced by security rules)
+- Firebase API key is restricted to your GitHub Pages domain
+- Claude and Pexels API keys are stored in each user's private Firestore document
+- No analytics or tracking

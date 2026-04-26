@@ -448,7 +448,10 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);min-height:100vh
     </ol>
     <p style="color:var(--t3);font-size:12px">💡 Personal plan generation costs ~$0.02–0.05 per plan. New accounts often get free credits.</p>
     <input type="password" class="minp" id="api-input" placeholder="sk-ant-api03-..."/>
-    <button class="btn btn-a" onclick="saveApiKey()" style="margin-bottom:10px">Save API key</button>
+    <div style="font-size:12px;font-weight:600;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;margin-top:4px">Pexels API Key <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--t3)">(for workout images)</span></div>
+    <p style="font-size:12px;color:var(--t3);margin-bottom:8px">Free key at <a href="https://www.pexels.com/api/" target="_blank" style="color:var(--ac)">pexels.com/api</a> — takes 2 minutes, no credit card.</p>
+    <input type="password" class="minp" id="pexels-input" placeholder="Your Pexels API key..."/>
+    <button class="btn btn-a" onclick="saveApiKey()" style="margin-bottom:10px">Save keys</button>
     <button class="btn btn-g" onclick="closeModal('api-modal')">Cancel</button>
   </div>
 </div>
@@ -471,7 +474,7 @@ const fbApp=initializeApp(fbCfg);
 const auth=getAuth(fbApp);
 const db=getFirestore(fbApp);
 
-window.FF={user:null,apiKey:'',profile:{},goals:{},planData:null,cycleOn:false};
+window.FF={user:null,apiKey:'',pexelsKey:'',profile:{},goals:{},planData:null,cycleOn:false};
 
 // ── Auth state ────────────────────────────────────────────────────────────────
 onAuthStateChanged(auth,async u=>{
@@ -498,7 +501,7 @@ window.switchAuth=m=>{
 window.doSignup=async()=>{
   const e=document.getElementById('se').value.trim(),p=document.getElementById('sp').value,p2=document.getElementById('sp2').value,el=document.getElementById('serr');
   if(p!==p2){el.textContent='Passwords do not match.';el.style.display='block';return;}
-  try{el.style.display='none';const c=await createUserWithEmailAndPassword(auth,e,p);await setDoc(doc(db,'users',c.user.uid),{email:e,createdAt:new Date().toISOString(),profile:{},goals:{},planData:null,apiKey:''});}
+  try{el.style.display='none';const c=await createUserWithEmailAndPassword(auth,e,p);await setDoc(doc(db,'users',c.user.uid),{email:e,createdAt:new Date().toISOString(),profile:{},goals:{},planData:null,apiKey:'',pexelsKey:'pygokG7ADIWaGRNb49GnHheT0o1DrgJTyAMLadyxgVBaA4quWfZeojAq'});}
   catch(err){el.textContent=err.message;el.style.display='block';}
 };
 
@@ -516,7 +519,8 @@ async function loadData(){
     const s=await getDoc(doc(db,'users',FF.user.uid));
     if(s.exists()){
       const d=s.data();
-      FF.profile=d.profile||{};FF.goals=d.goals||{};FF.apiKey=d.apiKey||'';FF.planData=d.planData||null;FF.cycleOn=FF.profile.cycleOn||false;
+      FF.profile=d.profile||{};FF.goals=d.goals||{};FF.apiKey=d.apiKey||'';FF.pexelsKey=d.pexelsKey||'pygokG7ADIWaGRNb49GnHheT0o1DrgJTyAMLadyxgVBaA4quWfZeojAq';FF.planData=d.planData||null;FF.cycleOn=FF.profile.cycleOn||false;
+    if(!d.pexelsKey)await updateDoc(doc(db,'users',FF.user.uid),{pexelsKey:FF.pexelsKey});
       if(FF.apiKey){document.getElementById('api-chip').classList.add('ok');document.getElementById('api-chip').textContent='✓ API Key';}
       restoreForm();
       if(FF.planData)renderPlan();
@@ -558,6 +562,63 @@ window.saveProfile=async()=>{
 };
 
 function gv(id){return document.getElementById(id)?.value||'';}
+
+
+// Cycle phase calculator
+function calcPhaseForDay(periodStart, cycleLen, targetDate) {
+  var start = new Date(periodStart);
+  var target = new Date(targetDate);
+  var diffMs = target - start;
+  if (diffMs < 0) return 'luteal';
+  var dayOfCycle = (Math.floor(diffMs / 86400000) % cycleLen) + 1;
+  if (dayOfCycle <= 5) return 'menstrual';
+  if (dayOfCycle <= 13) return 'follicular';
+  if (dayOfCycle <= 16) return 'ovulatory';
+  return 'luteal';
+}
+
+function calcAllDayPhases(periodStart, cycleLen, numDays) {
+  var phases = [];
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+  for (var i = 0; i < numDays; i++) {
+    var d = new Date(today);
+    d.setDate(d.getDate() + i);
+    phases.push(calcPhaseForDay(periodStart, cycleLen, d));
+  }
+  return phases;
+}
+
+function getPhaseLabel(phase) {
+  var map = {
+    menstrual: '🔴 Menstrual (Days 1-5)',
+    follicular: '🔵 Follicular (Days 6-13)',
+    ovulatory: '🟢 Ovulatory (Days 14-16)',
+    luteal: '🟡 Luteal (Days 17-28)'
+  };
+  return map[phase] || phase;
+}
+
+function showAutoPhase() {
+  var p = FF.profile;
+  if (!p['period-start'] || !FF.cycleOn) return;
+  var cycleLen = parseInt(p['cycle-len']) || 28;
+  var today = new Date();
+  var phase = calcPhaseForDay(p['period-start'], cycleLen, today);
+  var calcEl = document.getElementById('ci-phase-calc');
+  if (calcEl) calcEl.textContent = getPhaseLabel(phase);
+  var finalEl = document.getElementById('ci-phase-final');
+  if (finalEl) finalEl.value = phase;
+  var sel = document.getElementById('ci-phase');
+  if (sel) sel.value = phase;
+  var wrap = document.getElementById('ci-phase-wrap');
+  if (wrap) wrap.style.display = 'block';
+}
+
+window.togglePhaseOverride = function() {
+  var on = document.getElementById('ci-phase-override-tog').checked;
+  document.getElementById('ci-phase-override').style.display = on ? 'block' : 'none';
+};
 
 // ── Prompt builder ────────────────────────────────────────────────────────────
 function buildPrompt(isRefresh,ci){
@@ -639,6 +700,37 @@ function renderPlan(){
   document.getElementById('plan-ready').style.display='block';
 }
 
+// ── Pexels image loader ──────────────────────────────────────────────
+const pexelsCache={};
+async function fetchPexelsImage(query){
+  if(pexelsCache[query])return pexelsCache[query];
+  if(!FF.pexelsKey)return null;
+  try{
+    const res=await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1&orientation=landscape`,{
+      headers:{Authorization:FF.pexelsKey}
+    });
+    const data=await res.json();
+    const url=data.photos&&data.photos[0]?data.photos[0].src.medium:null;
+    if(url)pexelsCache[query]=url;
+    return url;
+  }catch(e){return null;}
+}
+
+async function loadWorkoutImages(day){
+  if(!day.workouts||!FF.pexelsKey)return;
+  for(let wi=0;wi<day.workouts.length;wi++){
+    const w=day.workouts[wi];
+    const imgId=`wimg-${day.day}-${wi}`;
+    const wrap=document.getElementById(imgId);
+    if(!wrap)continue;
+    const query=w.imageQuery||w.name+' exercise gym';
+    const url=await fetchPexelsImage(query);
+    if(url&&document.getElementById(imgId)){
+      document.getElementById(imgId).innerHTML=`<img src="${url}" alt="${w.name}" style="width:100%;height:130px;object-fit:cover;display:block;border-radius:0;" loading="lazy"/>`;
+    }
+  }
+}
+
 // ── Calendar view ─────────────────────────────────────────────────────────────
 function buildCalView(d){
   const days=d.days||[];
@@ -660,6 +752,7 @@ window.selDay=i=>{
   const det=document.getElementById('cal-det');
   det.innerHTML=buildDayHTML(day);
   det.scrollIntoView({behavior:'smooth',block:'nearest'});
+  if(day.workouts&&day.workouts.length) loadWorkoutImages(day);
 };
 
 function buildDayHTML(day){
@@ -669,9 +762,9 @@ function buildDayHTML(day){
   let h=`<div class="cal-detail"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px"><div><div style="font-size:12px;color:var(--t3);margin-bottom:2px">Day ${day.day} · ${day.dayName}</div><div style="font-size:16px;font-weight:600">${day.isRest?'🛌 Rest Day':day.focus}</div></div>${day.phase?`<span class="pp ${phC[day.phase]||'pf'}">${phE[day.phase]||''} ${day.phase}</span>`:''}</div>`;
   if(!day.isRest&&day.workouts&&day.workouts.length){
     h+='<div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:10px">💪 Workouts</div>';
-    day.workouts.forEach(w=>{
-      const imgSrc=`https://source.unsplash.com/400x200/?${encodeURIComponent(w.imageQuery||w.name)}`;
-      h+=`<div class="wcard"><img class="wimg" src="${imgSrc}" alt="${w.name}" loading="lazy" onerror="this.style.display='none'"/><div class="wbody"><div class="wname">${w.name}</div><div class="wdet">${w.sets} sets × ${w.reps}${w.note?` · <span style="color:var(--t3)">${w.note}</span>`:''}</div></div></div>`;
+    day.workouts.forEach((w,wi)=>{
+      const imgId=`wimg-${day.day}-${wi}`;
+      h+=`<div class="wcard"><div class="wimg-wrap" id="${imgId}" style="width:100%;height:130px;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:22px">🏋️</div><div class="wbody"><div class="wname">${w.name}</div><div class="wdet">${w.sets} sets × ${w.reps}${w.note?` · <span style="color:var(--t3)">${w.note}</span>`:''}</div></div></div>`;
     });
   }
   if(day.meals){
@@ -719,7 +812,16 @@ function buildListView(d){
   document.getElementById('view-list').innerHTML=h;
 }
 
-window.togLD=idx=>{document.getElementById('ldb-'+idx).classList.toggle('open');document.getElementById('arr-'+idx).classList.toggle('open');};
+window.togLD=idx=>{
+  const body=document.getElementById('ldb-'+idx);
+  const isOpening=!body.classList.contains('open');
+  body.classList.toggle('open');
+  document.getElementById('arr-'+idx).classList.toggle('open');
+  if(isOpening&&FF.planData){
+    const day=FF.planData.days[idx];
+    if(day&&day.workouts&&day.workouts.length) loadWorkoutImages(day);
+  }
+};
 
 // ── View toggle ───────────────────────────────────────────────────────────────
 window.switchView=v=>{
@@ -759,10 +861,19 @@ window.goPage=(name,btn)=>{
   btn.classList.add('active');
   if(name==='checkin' && FF.planData && FF.cycleOn) showAutoPhase();
 };
-window.openApiModal=()=>{document.getElementById('api-modal').classList.remove('hidden');document.getElementById('api-input').value=FF.apiKey;};
+window.openApiModal=()=>{document.getElementById('api-modal').classList.remove('hidden');document.getElementById('api-input').value=FF.apiKey;document.getElementById('pexels-input').value=FF.pexelsKey;};
 window.closeModal=id=>document.getElementById(id).classList.add('hidden');
 window.closeModalOv=e=>{if(e.target.classList.contains('mov'))e.target.classList.add('hidden');};
-window.saveApiKey=async()=>{const k=document.getElementById('api-input').value.trim();if(!k)return;FF.apiKey=k;await fbSave({apiKey:k});document.getElementById('api-chip').classList.add('ok');document.getElementById('api-chip').textContent='✓ API Key';closeModal('api-modal');};
+window.saveApiKey=async()=>{
+  const k=document.getElementById('api-input').value.trim();
+  const pk=document.getElementById('pexels-input').value.trim();
+  const updates={};
+  if(k){FF.apiKey=k;updates.apiKey=k;}
+  if(pk){FF.pexelsKey=pk;updates.pexelsKey=pk;}
+  if(Object.keys(updates).length) await fbSave(updates);
+  if(FF.apiKey){document.getElementById('api-chip').classList.add('ok');document.getElementById('api-chip').textContent='✓ API Key';}
+  closeModal('api-modal');
+};
 </script>
 </body>
 </html>
