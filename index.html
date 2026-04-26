@@ -383,9 +383,33 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);min-height:100vh
         <div class="field"><label>SpO2 (%)</label><input type="number" id="ci-sp" placeholder="e.g. 97" step="0.1"/></div>
         <div class="field"><label>Avg sleep (hrs)</label><input type="number" id="ci-sl" placeholder="e.g. 7.2" step="0.1"/></div>
       </div>
-      <div class="field" id="ci-phase-wrap" style="display:none">
-        <label>Current cycle phase</label>
-        <select id="ci-phase"><option value="menstrual">🔴 Menstrual</option><option value="follicular">🔵 Follicular</option><option value="ovulatory">🟢 Ovulatory</option><option value="luteal">🟡 Luteal</option></select>
+      <div id="ci-phase-wrap" style="display:none">
+        <div style="background:var(--s2);border-radius:var(--rs);padding:12px;margin-top:4px">
+          <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:8px">🌙 Cycle phase (auto-calculated)</div>
+          <div id="ci-phase-calc" style="font-size:14px;color:var(--tx);margin-bottom:8px;font-weight:500"></div>
+          <div style="font-size:12px;color:var(--t3);margin-bottom:10px">Based on your last period date and cycle length. If this looks off, correct it below.</div>
+          <div class="tog-row" style="margin-bottom:10px">
+            <label class="tw"><input type="checkbox" id="ci-phase-override-tog" onchange="togglePhaseOverride()"/><div class="tt"></div><div class="tb"></div></label>
+            <span style="font-size:13px;color:var(--t2)">My phase is actually different — correct it</span>
+          </div>
+          <div id="ci-phase-override" style="display:none">
+            <div class="ban bg-a" style="margin-bottom:10px;margin-top:4px">
+              <div class="bic">📅</div>
+              <div class="bbd">Correcting this updates your period date so all future plans stay accurate.</div>
+            </div>
+            <div class="fg fg2">
+              <div class="field">
+                <label>Actual current phase</label>
+                <select id="ci-phase"><option value="menstrual">🔴 Menstrual (d1-5)</option><option value="follicular">🔵 Follicular (d6-13)</option><option value="ovulatory">🟢 Ovulatory (d14-16)</option><option value="luteal">🟡 Luteal (d17-28)</option></select>
+              </div>
+              <div class="field">
+                <label>Actual last period start</label>
+                <input type="date" id="ci-period-correct"/>
+              </div>
+            </div>
+          </div>
+          <input type="hidden" id="ci-phase-final"/>
+        </div>
       </div>
     </div>
     <div class="card">
@@ -510,7 +534,7 @@ function restoreForm(){
   if(p.cycleOn){document.getElementById('cycle-tog').checked=true;document.getElementById('cycle-fields').style.display='block';FF.cycleOn=true;updCycle();}
   const g=FF.goals;
   ['g-weight','g-bodyfat','g-waist','g-timeframe','g-primary','g-level','g-days','g-equip','g-diet','g-injuries','g-cookstyle','g-prepday','g-variety','g-cooktime','g-dislikes'].forEach(id=>{const el=document.getElementById(id);if(el&&g[id])el.value=g[id];});
-  if(FF.planData){document.getElementById('ci-nop').style.display='none';document.getElementById('ci-main').style.display='block';if(FF.cycleOn)document.getElementById('ci-phase-wrap').style.display='block';}
+  if(FF.planData){document.getElementById('ci-nop').style.display='none';document.getElementById('ci-main').style.display='block';if(FF.cycleOn)setTimeout(showAutoPhase,100);}
 }
 
 // ── Cycle ─────────────────────────────────────────────────────────────────────
@@ -543,8 +567,24 @@ function buildPrompt(isRefresh,ci){
   if(p.hba1c)pr+=` | HbA1c ${p.hba1c}%`;
   pr+=`\nGOAL: ${g['g-primary']} | ${g['g-timeframe']} | Target ${g['g-weight']}kg/${g['g-bodyfat']}%BF/${g['g-waist']}cm waist | ${g['g-level']} | ${g['g-days']}d/wk | ${g['g-equip']} | Diet: ${g['g-diet']||'none'} | Injuries: ${g['g-injuries']||'none'}`;
   pr+=`\nMEAL PREP: ${g['g-cookstyle']} | Prep day: ${g['g-prepday']} | Variety: ${g['g-variety']} | Cook time: ${g['g-cooktime']} | Avoid: ${g['g-dislikes']||'none'}`;
-  if(FF.cycleOn&&p['cycle-phase'])pr+=`\nCYCLE: ON | ${p['cycle-len']||28}d cycle | Last period: ${p['period-start']} | Now: ${p['cycle-phase']}\nCYCLE RULES: menstrual(d1-5)=light yoga/walk,no HIIT,iron+magnesium foods; follicular(d6-13)=progressive overload,complex carbs,cruciferous veg; ovulatory(d14-16)=peak effort,heavy compounds+HIIT,high protein+zinc; luteal(d17-28)=moderate,steady-state,complex carbs,magnesium+B6,+150kcal`;
-  if(isRefresh&&ci)pr+=`\nCHECK-IN: wt ${ci.wt||'N/A'} | bf ${ci.bf||'N/A'} | waist ${ci.ws||'N/A'} | RHR ${ci.rhr||'N/A'} | HRV ${ci.hrv||'N/A'} | SpO2 ${ci.sp||'N/A'} | sleep ${ci.sl||'N/A'}\nEnergy: ${ci.en} | Done: ${ci.done} | Diet: ${ci.di} | Notes: ${ci.no||'none'}${FF.cycleOn?' | Phase: '+(ci.phase||'N/A'):''}`;
+  if(FF.cycleOn&&p['period-start']){
+    const cycleLen=parseInt(p['cycle-len'])||28;
+    const phases=calcAllDayPhases(p['period-start'],cycleLen,14);
+    pr+=`\nCYCLE: ON | ${cycleLen}d cycle | Last period: ${p['period-start']}`;
+    pr+=`\nPHASE PER DAY (auto-calculated from period date): ${phases.map((ph,i)=>`Day${i+1}=${ph}`).join(', ')}`;
+    pr+=`\nCYCLE RULES: menstrual(d1-5)=light yoga/walk ONLY no HIIT,iron+magnesium+anti-inflammatory foods; follicular(d6-13)=progressive overload,new movements,complex carbs,cruciferous veg; ovulatory(d14-16)=peak performance,heavy compounds+HIIT,high protein,zinc+antioxidants; luteal(d17-28)=moderate intensity,steady-state cardio,complex carbs,magnesium+B6,+150kcal`;
+    pr+=`\nIMPORTANT: Set each day's phase field in JSON exactly as specified in PHASE PER DAY above.`;
+  }
+  if(isRefresh&&ci){
+    pr+=`\nCHECK-IN: wt ${ci.wt||'N/A'} | bf ${ci.bf||'N/A'} | waist ${ci.ws||'N/A'} | RHR ${ci.rhr||'N/A'} | HRV ${ci.hrv||'N/A'} | SpO2 ${ci.sp||'N/A'} | sleep ${ci.sl||'N/A'}\nEnergy: ${ci.en} | Done: ${ci.done} | Diet: ${ci.di} | Notes: ${ci.no||'none'}`;
+    if(FF.cycleOn){
+      const corrected=ci.periodCorrect||p['period-start'];
+      const cycleLen=parseInt(p['cycle-len'])||28;
+      const phases=calcAllDayPhases(corrected,cycleLen,14);
+      pr+=`\nRECALCULATED phase per day from ${corrected}: ${phases.map((ph,i)=>`Day${i+1}=${ph}`).join(', ')}`;
+      if(ci.periodCorrect)pr+=` | User corrected period date — trust these phases over original.`;
+    }
+  }
 
   pr+=`\n\nRespond ONLY with valid JSON (no markdown, no explanation):
 {"summary":"2-3 sentence health assessment","calories":{"daily":1800,"protein":140,"carbs":180,"fat":60,"note":"brief reason"},"tips":["tip1","tip2","tip3","tip4"],"days":[{"day":1,"dayName":"Monday","week":1,"isRest":false,"focus":"Push — Chest, Shoulders, Triceps","phase":"follicular","workouts":[{"name":"Barbell Bench Press","sets":"4","reps":"8-10","note":"45° elbow path","imageQuery":"bench press barbell gym"},{"name":"Dumbbell Shoulder Press","sets":"3","reps":"10-12","note":"","imageQuery":"dumbbell shoulder press exercise"}],"meals":{"breakfast":{"name":"Greek Yogurt Parfait with Berries","calories":420,"searchQuery":"greek yogurt berry parfait recipe","prepNote":""},"lunch":{"name":"Grilled Chicken Quinoa Bowl","calories":550,"searchQuery":"grilled chicken quinoa bowl recipe","prepNote":"Batch cook 4 portions Sunday"},"dinner":{"name":"Salmon Sweet Potato Broccoli","calories":580,"searchQuery":"baked salmon sweet potato broccoli recipe","prepNote":""},"snack":{"name":"Apple with Almond Butter","calories":200,"searchQuery":"apple almond butter snack","prepNote":""}}}]}
@@ -691,7 +731,12 @@ window.switchView=v=>{
 
 // ── Generate refresh ──────────────────────────────────────────────────────────
 window.generateRefresh=async()=>{
-  const ci={wt:gv('ci-wt'),bf:gv('ci-bf'),ws:gv('ci-ws'),bm:gv('ci-bm'),rhr:gv('ci-rhr'),hrv:gv('ci-hrv'),sp:gv('ci-sp'),sl:gv('ci-sl'),phase:gv('ci-phase'),en:gv('ci-en'),done:gv('ci-do'),di:gv('ci-di'),no:gv('ci-no')};
+  const phaseOverrideOn = document.getElementById('ci-phase-override-tog')?.checked;
+  const correctedPeriod = phaseOverrideOn ? gv('ci-period-correct') : null;
+  const correctedPhase = phaseOverrideOn ? gv('ci-phase') : (document.getElementById('ci-phase-final')?.value || null);
+  // If user corrected their period date, save it back to profile
+  if(correctedPeriod && FF.cycleOn){ FF.profile['period-start']=correctedPeriod; await fbSave({profile:FF.profile}); }
+  const ci={wt:gv('ci-wt'),bf:gv('ci-bf'),ws:gv('ci-ws'),bm:gv('ci-bm'),rhr:gv('ci-rhr'),hrv:gv('ci-hrv'),sp:gv('ci-sp'),sl:gv('ci-sl'),phase:correctedPhase,periodCorrect:correctedPeriod,en:gv('ci-en'),done:gv('ci-do'),di:gv('ci-di'),no:gv('ci-no')};
   document.getElementById('refresh-btn').disabled=true;document.getElementById('ci-out').style.display='none';document.getElementById('ci-err').style.display='none';document.getElementById('ci-loading').style.display='flex';
   if(ci.wt)FF.profile.weight=ci.wt;if(ci.bf)FF.profile.bodyfat=ci.bf;if(ci.ws)FF.profile.waist=ci.ws;if(ci.bm)FF.profile.bmi=ci.bm;
   await fbSave({profile:FF.profile});
@@ -707,7 +752,13 @@ window.generateRefresh=async()=>{
 };
 
 // ── Nav + modals ──────────────────────────────────────────────────────────────
-window.goPage=(name,btn)=>{document.querySelectorAll('.pg').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.ni').forEach(b=>b.classList.remove('active'));document.getElementById('pg-'+name).classList.add('active');btn.classList.add('active');};
+window.goPage=(name,btn)=>{
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pg-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='checkin' && FF.planData && FF.cycleOn) showAutoPhase();
+};
 window.openApiModal=()=>{document.getElementById('api-modal').classList.remove('hidden');document.getElementById('api-input').value=FF.apiKey;};
 window.closeModal=id=>document.getElementById(id).classList.add('hidden');
 window.closeModalOv=e=>{if(e.target.classList.contains('mov'))e.target.classList.add('hidden');};
