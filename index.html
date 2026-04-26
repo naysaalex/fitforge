@@ -555,7 +555,7 @@ Generate all 14 days. Apply meal prep style (${g['g-cookstyle']}, ${g['g-variety
 // ── Claude API ────────────────────────────────────────────────────────────────
 async function callClaude(prompt){
   if(!FF.apiKey)throw new Error('No API key. Tap "⚙ API Key" in the header to add yours.');
-  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':FF.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:4096,system:'You are an expert personal trainer and nutritionist. Respond ONLY with valid JSON. No markdown fences, no explanation, no extra text — just the raw JSON object.',messages:[{role:'user',content:prompt}]})});
+  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':FF.apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:8000,system:'You are an expert personal trainer and nutritionist. Respond ONLY with valid JSON. No markdown fences, no explanation, no extra text — just the raw JSON object. Be concise: meal names under 8 words, workout notes under 10 words, search queries under 6 words. Always complete all 14 days.',messages:[{role:'user',content:prompt}]})});
   const data=await res.json();
   if(data.error)throw new Error(data.error.message);
   const txt=data.content.map(c=>c.text||'').join('').trim().replace(/^```json?\n?/,'').replace(/\n?```$/,'');
