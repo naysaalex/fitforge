@@ -9,7 +9,6 @@ An AI-powered personal health and fitness web app. Generates personalized 2-week
 - **AI-generated 2-week plans** — personalized workouts and daily meals based on your metrics, goals, and meal prep preferences
 - **Cycle syncing** — automatically calculates your menstrual phase day-by-day across the full 14-day plan and adapts workouts and nutrition accordingly
 - **Calendar & list view** — toggle between a 14-day calendar grid and a scrollable list; tap any day to expand workouts and meals
-- **Workout images** — real exercise photos loaded from Pexels for each workout
 - **Recipe links** — every meal links to an AllRecipes search
 - **Biweekly check-in** — update your metrics, correct your cycle phase if needed, and regenerate a fresh plan
 - **Cloud storage** — all data saved to Firebase; persists across devices and browser refreshes
@@ -24,7 +23,6 @@ An AI-powered personal health and fitness web app. Generates personalized 2-week
 | Hosting | GitHub Pages (free) |
 | Auth & database | Firebase Authentication + Cloud Firestore |
 | AI plan generation | Anthropic Claude API (`claude-sonnet-4-5`) |
-| Workout images | Pexels API (free) |
 | Recipe links | AllRecipes search |
 | Frontend | Vanilla HTML / CSS / JS — no frameworks |
 
@@ -77,7 +75,6 @@ RingConn syncs to Apple Health. At each 2-week check-in, pull your metrics from 
 | GitHub Pages | Free |
 | Firebase Spark plan | Free |
 | Claude API | ~$0.05–0.15 per plan generation |
-| Pexels API | Free |
 
 A $5 Anthropic credit covers roughly 50–250 plan generations. Each user pays only for their own usage via their own API key.
 
@@ -87,5 +84,5 @@ A $5 Anthropic credit covers roughly 50–250 plan generations. Each user pays o
 
 - Users can only read and write their own Firestore data (enforced by security rules)
 - Firebase API key is restricted to your GitHub Pages domain
-- Claude and Pexels API keys are stored in each user's private Firestore document
+- Claude API keys are stored in each user's private Firestore document
 - No analytics or tracking
