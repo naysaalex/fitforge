@@ -706,8 +706,8 @@ function buildPrompt(isRefresh,ci){
   }
 
   pr+=`\n\nRespond ONLY with valid JSON (no markdown, no explanation):
-{"summary":"2-3 sentence health assessment","calories":{"daily":1800,"protein":140,"carbs":180,"fat":60,"note":"brief reason"},"tips":["tip1","tip2","tip3","tip4"],"days":[{"day":1,"dayName":"Monday","week":1,"isRest":false,"focus":"Push — Chest, Shoulders, Triceps","phase":"follicular","workouts":[{"name":"Barbell Bench Press","sets":"4","reps":"8-10","note":"45° elbow path"},{"name":"Dumbbell Shoulder Press","sets":"3","reps":"10-12","note":""}],"meals":{"breakfast":{"name":"Greek Yogurt Parfait with Berries","calories":420,"searchQuery":"greek yogurt berry parfait recipe","prepNote":""},"lunch":{"name":"Grilled Chicken Quinoa Bowl","calories":550,"searchQuery":"grilled chicken quinoa bowl recipe","prepNote":"Batch cook 4 portions Sunday"},"dinner":{"name":"Salmon Sweet Potato Broccoli","calories":580,"searchQuery":"baked salmon sweet potato broccoli recipe","prepNote":""},"snack":{"name":"Apple with Almond Butter","calories":200,"searchQuery":"apple almond butter snack","prepNote":""}}}]}
-Generate all 14 days. Apply meal prep style (${g['g-cookstyle']}, ${g['g-variety']}). Add prepNote for batch-cookable meals. Rest days: isRest:true, workouts:[], simplified meals. Apply cycle rules per day if cycle is ON.`;
+{"summary":"2-3 sentence personalized health assessment referencing their specific metrics and goal","sleepRec":{"baseline":"7-9 hrs","menstrual":"8-9 hrs","follicular":"7-8 hrs","ovulatory":"7-8 hrs","luteal":"8-9 hrs","heavyTraining":"aim for 8+ hrs","note":"1 sentence personalized sleep note based on their goal and metrics"},"calories":{"daily":1800,"protein":140,"carbs":180,"fat":60,"note":"brief reason"},"tips":["personalized tip mentioning their specific metric or goal","personalized tip 2","personalized tip 3","personalized tip 4"],"days":[{"day":1,"dayName":"Monday","week":1,"isRest":false,"focus":"Push — Chest, Shoulders, Triceps","phase":"follicular","workouts":[{"name":"Barbell Bench Press","sets":"4","reps":"8-10","note":"45° elbow path"},{"name":"Dumbbell Shoulder Press","sets":"3","reps":"10-12","note":""}],"meals":{"breakfast":{"name":"Greek Yogurt Parfait with Berries","calories":420,"searchQuery":"greek yogurt berry parfait recipe","prepNote":""},"lunch":{"name":"Grilled Chicken Quinoa Bowl","calories":550,"searchQuery":"grilled chicken quinoa bowl recipe","prepNote":"Batch cook 4 portions Sunday"},"dinner":{"name":"Salmon Sweet Potato Broccoli","calories":580,"searchQuery":"baked salmon sweet potato broccoli recipe","prepNote":""},"snack":{"name":"Apple with Almond Butter","calories":200,"searchQuery":"apple almond butter snack","prepNote":""}}}]}
+Generate all 14 days. Apply meal prep style (${g['g-cookstyle']}, ${g['g-variety']}). Add prepNote for batch-cookable meals. Rest days: isRest:true, workouts:[], simplified meals. Apply cycle rules per day if cycle is ON. Tips and summary must be personalized to this specific user — reference their actual metrics, phase, or goal directly, not generic advice.`;
   return pr;
 }
 
@@ -907,6 +907,10 @@ function buildMealsView(d){
 // ── Summary view ─────────────────────────────────────────────────────────────
 function buildSummaryView(d){
   let h='';
+
+  // Download PDF button
+  h+=`<button onclick="downloadPDF()" class="btn btn-a" style="margin-bottom:14px">⬇ Download plan as PDF</button>`;
+
   if(d.summary){
     h+=`<div class="card"><div class="clbl">📋 Health assessment</div><p style="font-size:14px;color:var(--t2);line-height:1.78">${d.summary}</p></div>`;
   }
@@ -933,6 +937,38 @@ function buildSummaryView(d){
       ${d.calories.note?`<div style="font-size:13px;color:var(--t3);line-height:1.65">${d.calories.note}</div>`:''}
     </div>`;
   }
+  if(d.sleepRec){
+    const s=d.sleepRec;
+    h+=`<div class="card"><div class="clbl">😴 Sleep recommendations</div>
+      <p style="font-size:13px;color:var(--t2);line-height:1.65;margin-bottom:12px">${s.note||''}</p>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center;background:var(--s2);border-radius:var(--rs);padding:10px 12px">
+          <span style="font-size:13px;color:var(--t2)">Nightly baseline</span>
+          <span style="font-size:13px;font-weight:600;color:var(--ac)">${s.baseline}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,107,107,.08);border-radius:var(--rs);padding:10px 12px">
+          <span style="font-size:13px;color:var(--t2)">🔴 Menstrual phase</span>
+          <span style="font-size:13px;font-weight:600;color:#ff9494">${s.menstrual}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(96,165,250,.08);border-radius:var(--rs);padding:10px 12px">
+          <span style="font-size:13px;color:var(--t2)">🔵 Follicular phase</span>
+          <span style="font-size:13px;font-weight:600;color:#93c5fd">${s.follicular}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(200,240,110,.08);border-radius:var(--rs);padding:10px 12px">
+          <span style="font-size:13px;color:var(--t2)">🟢 Ovulatory phase</span>
+          <span style="font-size:13px;font-weight:600;color:var(--ac)">${s.ovulatory}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(245,166,35,.08);border-radius:var(--rs);padding:10px 12px">
+          <span style="font-size:13px;color:var(--t2)">🟡 Luteal phase</span>
+          <span style="font-size:13px;font-weight:600;color:#fbbf24">${s.luteal}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;background:var(--s2);border-radius:var(--rs);padding:10px 12px">
+          <span style="font-size:13px;color:var(--t2)">🏋️ Heavy training days</span>
+          <span style="font-size:13px;font-weight:600;color:var(--tx)">${s.heavyTraining}</span>
+        </div>
+      </div>
+    </div>`;
+  }
   if(d.tips&&d.tips.length){
     h+=`<div class="card"><div class="clbl">✨ Tips for success</div><div style="display:flex;flex-direction:column;gap:12px">`;
     d.tips.forEach((t,i)=>{
@@ -945,6 +981,162 @@ function buildSummaryView(d){
   }
   document.getElementById('view-summary').innerHTML=h;
 }
+
+// ── PDF download ──────────────────────────────────────────────────────────────
+window.downloadPDF = function() {
+  const d = FF.planData;
+  const p = FF.profile;
+  const g = FF.goals;
+  if (!d) return;
+  const units = FF.useImperial;
+  const wU = units ? 'lbs' : 'kg';
+  const mU = units ? 'in' : 'cm';
+  const hU = units ? 'in' : 'cm';
+  const fmt = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  const phE = {menstrual:'Menstrual',follicular:'Follicular',ovulatory:'Ovulatory',luteal:'Luteal'};
+
+  let html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Helvetica Neue',Arial,sans-serif;color:#1a1a1a;font-size:13px;line-height:1.6;padding:40px}
+    h1{font-size:28px;font-weight:700;margin-bottom:4px;color:#1a1a1a}
+    h2{font-size:16px;font-weight:700;margin:24px 0 10px;color:#1a1a1a;border-bottom:1.5px solid #e5e5e5;padding-bottom:6px}
+    h3{font-size:14px;font-weight:700;margin:14px 0 6px;color:#333}
+    .subtitle{font-size:13px;color:#888;margin-bottom:32px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+    .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+    .tile{background:#f7f7f7;border-radius:8px;padding:12px;text-align:center}
+    .tile-val{font-size:22px;font-weight:700;color:#1a1a1a}
+    .tile-lbl{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
+    .metric-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:.5px solid #eee;font-size:13px}
+    .metric-row:last-child{border-bottom:none}
+    .metric-key{color:#666}
+    .metric-val{font-weight:600;color:#1a1a1a}
+    .day-block{background:#f9f9f9;border-radius:8px;padding:12px;margin-bottom:8px;page-break-inside:avoid}
+    .day-hdr{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+    .day-num{font-size:11px;font-weight:700;color:#c8f06e;background:#1a2a00;padding:2px 8px;border-radius:10px}
+    .day-name{font-size:14px;font-weight:700}
+    .day-focus{font-size:12px;color:#666}
+    .phase-tag{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600}
+    .ex-row{display:flex;gap:8px;font-size:12px;padding:3px 0;color:#444}
+    .ex-name{flex:1;font-weight:500;color:#1a1a1a}
+    .ex-sets{color:#666;white-space:nowrap}
+    .meal-row{display:grid;grid-template-columns:80px 1fr auto;gap:8px;font-size:12px;padding:3px 0;align-items:start}
+    .meal-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#888;padding-top:2px}
+    .meal-name{color:#1a1a1a}
+    .meal-cal{color:#888;white-space:nowrap}
+    .rest-day{color:#888;font-style:italic;font-size:12px}
+    .tip-row{display:flex;gap:10px;padding:6px 0;font-size:13px;border-bottom:.5px solid #eee}
+    .tip-row:last-child{border-bottom:none}
+    .tip-num{width:20px;height:20px;border-radius:50%;background:#c8f06e;color:#1a2a00;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+    .sleep-row{display:flex;justify-content:space-between;padding:6px 10px;border-radius:6px;font-size:12px;margin-bottom:4px}
+    .accent{color:#5a8a00;font-weight:600}
+    @media print{body{padding:20px}.day-block{page-break-inside:avoid}}
+  </style></head><body>
+  <h1>FitForge — My 2-Week Plan</h1>
+  <div class="subtitle">Generated ${fmt} &nbsp;·&nbsp; ${p.name||'User'}</div>`;
+
+  // Metrics & Goals
+  html += `<h2>My Metrics & Goals</h2><div class="grid2">
+    <div>
+      <h3>Current</h3>
+      <div class="metric-row"><span class="metric-key">Weight</span><span class="metric-val">${p.weight||'—'} ${wU}</span></div>
+      <div class="metric-row"><span class="metric-key">Height</span><span class="metric-val">${p.height||'—'} ${hU}</span></div>
+      <div class="metric-row"><span class="metric-key">BMI</span><span class="metric-val">${p.bmi||'—'}</span></div>
+      <div class="metric-row"><span class="metric-key">Body fat</span><span class="metric-val">${p.bodyfat||'—'}%</span></div>
+      <div class="metric-row"><span class="metric-key">Waist</span><span class="metric-val">${p.waist||'—'} ${mU}</span></div>
+      ${p.cholesterol?`<div class="metric-row"><span class="metric-key">Cholesterol</span><span class="metric-val">${p.cholesterol} mg/dL</span></div>`:''}
+      ${p.hdl?`<div class="metric-row"><span class="metric-key">HDL / LDL</span><span class="metric-val">${p.hdl} / ${p.ldl} mg/dL</span></div>`:''}
+      ${p.hba1c?`<div class="metric-row"><span class="metric-key">HbA1c</span><span class="metric-val">${p.hba1c}%</span></div>`:''}
+    </div>
+    <div>
+      <h3>Goals</h3>
+      <div class="metric-row"><span class="metric-key">Primary goal</span><span class="metric-val">${g['g-primary']||'—'}</span></div>
+      <div class="metric-row"><span class="metric-key">Target weight</span><span class="metric-val">${g['g-weight']||'—'} ${wU}</span></div>
+      <div class="metric-row"><span class="metric-key">Target body fat</span><span class="metric-val">${g['g-bodyfat']||'—'}%</span></div>
+      <div class="metric-row"><span class="metric-key">Target waist</span><span class="metric-val">${g['g-waist']||'—'} ${mU}</span></div>
+      <div class="metric-row"><span class="metric-key">Timeframe</span><span class="metric-val">${g['g-timeframe']||'—'}</span></div>
+      <div class="metric-row"><span class="metric-key">Gym days/week</span><span class="metric-val">${g['g-days']||'—'}</span></div>
+      <div class="metric-row"><span class="metric-key">Fitness level</span><span class="metric-val">${g['g-level']||'—'}</span></div>
+    </div>
+  </div>`;
+
+  // Health summary
+  if(d.summary) html += `<h2>Health Assessment</h2><p style="font-size:13px;color:#444;line-height:1.75;margin-bottom:8px">${d.summary}</p>`;
+
+  // Calorie targets
+  if(d.calories){
+    html += `<h2>Daily Nutrition Targets</h2><div class="grid4">
+      <div class="tile"><div class="tile-val">${d.calories.daily}</div><div class="tile-lbl">Calories</div></div>
+      <div class="tile"><div class="tile-val">${d.calories.protein}g</div><div class="tile-lbl">Protein</div></div>
+      <div class="tile"><div class="tile-val">${d.calories.carbs}g</div><div class="tile-lbl">Carbs</div></div>
+      <div class="tile"><div class="tile-val">${d.calories.fat}g</div><div class="tile-lbl">Fat</div></div>
+    </div>
+    ${d.calories.note?`<p style="font-size:12px;color:#666;margin-bottom:8px">${d.calories.note}</p>`:''}`;
+  }
+
+  // Sleep
+  if(d.sleepRec){
+    const s=d.sleepRec;
+    html += `<h2>Sleep Recommendations</h2>
+    ${s.note?`<p style="font-size:13px;color:#444;margin-bottom:10px">${s.note}</p>`:''}
+    <div class="sleep-row" style="background:#f0f9e0"><span>Baseline nightly</span><span class="accent">${s.baseline}</span></div>
+    <div class="sleep-row" style="background:#fff0f0"><span>🔴 Menstrual phase</span><span style="font-weight:600;color:#c0392b">${s.menstrual}</span></div>
+    <div class="sleep-row" style="background:#f0f4ff"><span>🔵 Follicular phase</span><span style="font-weight:600;color:#2980b9">${s.follicular}</span></div>
+    <div class="sleep-row" style="background:#f0f9e0"><span>🟢 Ovulatory phase</span><span class="accent">${s.ovulatory}</span></div>
+    <div class="sleep-row" style="background:#fffbf0"><span>🟡 Luteal phase</span><span style="font-weight:600;color:#e67e22">${s.luteal}</span></div>
+    <div class="sleep-row" style="background:#f5f5f5"><span>🏋️ Heavy training days</span><span style="font-weight:600">${s.heavyTraining}</span></div>`;
+  }
+
+  // 14-day plan
+  const days = d.days||[];
+  [1,2].forEach(wk=>{
+    html += `<h2>Week ${wk} — Workout & Meal Plan</h2>`;
+    days.filter(day=>day.week===wk).forEach(day=>{
+      const phTag = day.phase ? `<span class="phase-tag" style="background:#f0f9e0;color:#5a8a00">${phE[day.phase]||day.phase}</span>` : '';
+      html += `<div class="day-block">
+        <div class="day-hdr">
+          <span class="day-num">Day ${day.day}</span>
+          <span class="day-name">${day.dayName}</span>
+          <span class="day-focus">${day.isRest?'Rest Day':day.focus}</span>
+          ${phTag}
+        </div>`;
+      if(!day.isRest && day.workouts && day.workouts.length){
+        html += `<div style="margin-bottom:8px">`;
+        day.workouts.forEach(w=>{
+          html += `<div class="ex-row"><span class="ex-name">${w.name}</span><span class="ex-sets">${w.sets} sets × ${w.reps}${w.note?' · '+w.note:''}</span></div>`;
+        });
+        html += `</div>`;
+      } else if(day.isRest){
+        html += `<div class="rest-day" style="margin-bottom:8px">Rest & recovery — focus on hydration and sleep</div>`;
+      }
+      if(day.meals){
+        const mealOrder=[['breakfast','Breakfast'],['lunch','Lunch'],['dinner','Dinner'],['snack','Snack']];
+        mealOrder.forEach(([k,lbl])=>{
+          const m=day.meals[k];if(!m)return;
+          html+=`<div class="meal-row"><span class="meal-type">${lbl}</span><span class="meal-name">${m.name}${m.prepNote?' 🥘 '+m.prepNote:''}</span><span class="meal-cal">~${m.calories} kcal</span></div>`;
+        });
+      }
+      html += `</div>`;
+    });
+  });
+
+  // Tips
+  if(d.tips&&d.tips.length){
+    html += `<h2>Tips for Success</h2><div>`;
+    d.tips.forEach((t,i)=>{
+      html += `<div class="tip-row"><div class="tip-num">${i+1}</div><div>${t}</div></div>`;
+    });
+    html += `</div>`;
+  }
+
+  html += `</body></html>`;
+
+  const w = window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(()=>w.print(),400);
+};
 
 // ── View toggle ───────────────────────────────────────────────────────────────
 window.switchView=v=>{
