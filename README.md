@@ -9,7 +9,6 @@ An AI-powered personal health and fitness web app. Generates personalized 2-week
 - **AI-generated 2-week plans** — personalized workouts and daily meals based on your metrics, goals, and meal prep preferences
 - **Cycle syncing** — automatically calculates your menstrual phase day-by-day across the full 14-day plan and adapts workouts and nutrition accordingly
 - **4 tab view** — toggle between Calendar (14-day grid, tap any day to expand), List (scrollable day-by-day accordion), Meals (full 2-week meal breakdown with a batch cooking prep summary showing which meals repeat and how many portions to make), and Summary (health assessment, daily macro targets, and tips)
-- **Recipe links** — every meal links to an AllRecipes search
 - **Biweekly check-in** — update your metrics, correct your cycle phase if needed, and regenerate a fresh plan
 - **Cloud storage** — all data saved to Firebase; persists across devices and browser refreshes
 - **Per-user accounts** — each user signs in with their own email/password and provides their own Claude API key
@@ -23,7 +22,6 @@ An AI-powered personal health and fitness web app. Generates personalized 2-week
 | Hosting | GitHub Pages (free) |
 | Auth & database | Firebase Authentication + Cloud Firestore |
 | AI plan generation | Anthropic Claude API (`claude-sonnet-4-5`) |
-| Recipe links | AllRecipes search |
 | Frontend | Vanilla HTML / CSS / JS — no frameworks |
 
 ---
