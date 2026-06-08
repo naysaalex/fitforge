@@ -108,8 +108,6 @@ body{font-family:var(--fb);background:var(--bg);color:var(--tx);min-height:100vh
 .mtype{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:3px}
 .mname{font-size:14px;font-weight:500;color:var(--tx);margin-bottom:3px}
 .mcal{font-size:12px;color:var(--t3);margin-bottom:7px}
-.mlink{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--bl);text-decoration:none;background:rgba(96,165,250,.1);padding:4px 10px;border-radius:6px}
-.mlink:hover{background:rgba(96,165,250,.18)}
 /* Phase pill */
 .pp{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:10px;font-size:11px;font-weight:500}
 .pm{background:rgba(255,107,107,.13);color:#ff9494}
@@ -709,7 +707,7 @@ function buildPrompt(isRefresh,ci){
   }
 
   pr+=`\n\nRespond ONLY with valid JSON (no markdown, no explanation):
-{"summary":"2-3 sentence personalized health assessment referencing their specific metrics and goal","sleepRec":{"baseline":"7-9 hrs","menstrual":"8-9 hrs","follicular":"7-8 hrs","ovulatory":"7-8 hrs","luteal":"8-9 hrs","heavyTraining":"aim for 8+ hrs","note":"1 sentence personalized sleep note based on their goal and metrics"},"calories":{"daily":1800,"protein":140,"carbs":180,"fat":60,"note":"brief reason"},"tips":["personalized tip mentioning their specific metric or goal","personalized tip 2","personalized tip 3","personalized tip 4"],"days":[{"day":1,"dayName":"Monday","week":1,"isRest":false,"focus":"Push — Chest, Shoulders, Triceps","phase":"follicular","workouts":[{"name":"Barbell Bench Press","sets":"4","reps":"8-10","note":"45° elbow path"},{"name":"Dumbbell Shoulder Press","sets":"3","reps":"10-12","note":""}],"meals":{"breakfast":{"name":"Greek Yogurt Parfait with Berries","calories":420,"searchQuery":"greek yogurt berry parfait recipe","prepNote":""},"lunch":{"name":"Grilled Chicken Quinoa Bowl","calories":550,"searchQuery":"grilled chicken quinoa bowl recipe","prepNote":"Batch cook 4 portions Sunday"},"dinner":{"name":"Salmon Sweet Potato Broccoli","calories":580,"searchQuery":"baked salmon sweet potato broccoli recipe","prepNote":""},"snack":{"name":"Apple with Almond Butter","calories":200,"searchQuery":"apple almond butter snack","prepNote":""}}}]}
+{"summary":"2-3 sentence personalized health assessment referencing their specific metrics and goal","sleepRec":{"baseline":"7-9 hrs","menstrual":"8-9 hrs","follicular":"7-8 hrs","ovulatory":"7-8 hrs","luteal":"8-9 hrs","heavyTraining":"aim for 8+ hrs","note":"1 sentence personalized sleep note based on their goal and metrics"},"calories":{"daily":1800,"protein":140,"carbs":180,"fat":60,"note":"brief reason"},"tips":["personalized tip mentioning their specific metric or goal","personalized tip 2","personalized tip 3","personalized tip 4"],"days":[{"day":1,"dayName":"Monday","week":1,"isRest":false,"focus":"Push — Chest, Shoulders, Triceps","phase":"follicular","workouts":[{"name":"Barbell Bench Press","sets":"4","reps":"8-10","note":"45° elbow path"},{"name":"Dumbbell Shoulder Press","sets":"3","reps":"10-12","note":""}],"meals":{"breakfast":{"name":"Greek Yogurt Parfait with Berries","calories":420,"prepNote":""},"lunch":{"name":"Grilled Chicken Quinoa Bowl","calories":550,"prepNote":"Batch cook 4 portions Sunday"},"dinner":{"name":"Salmon Sweet Potato Broccoli","calories":580,"prepNote":""},"snack":{"name":"Apple with Almond Butter","calories":200,"prepNote":""}}}]}
 Generate all 14 days. Apply meal prep style (${g['g-cookstyle']}, ${g['g-variety']}). Add prepNote for batch-cookable meals. Rest days: isRest:true, workouts:[], simplified meals. Apply cycle rules per day if cycle is ON. Tips and summary must be personalized to this specific user — reference their actual metrics, phase, or goal directly, not generic advice.`;
   return pr;
 }
@@ -799,8 +797,7 @@ function buildDayHTML(day){
     h+='<div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin:14px 0 10px">🍽️ Meals</div>';
     [['breakfast','Breakfast'],['lunch','Lunch'],['dinner','Dinner'],['snack','Snack']].forEach(([k,lbl])=>{
       const m=day.meals[k];if(!m)return;
-      const url=`https://www.allrecipes.com/search?q=${encodeURIComponent(m.searchQuery||m.name)}`;
-      h+=`<div class="mcard"><div class="mtype">${lbl}</div><div class="mname">${m.name}</div><div class="mcal">~${m.calories} kcal${m.prepNote?` · <span style="color:var(--am)">🥘 ${m.prepNote}</span>`:''}</div><a href="${url}" target="_blank" class="mlink">🔗 Find recipe</a></div>`;
+      h+=`<div class="mcard"><div class="mtype">${lbl}</div><div class="mname">${m.name}</div><div class="mcal">~${m.calories} kcal${m.prepNote?` · <span style="color:var(--am)">🥘 ${m.prepNote}</span>`:''}</div></div>`;
     });
   }
   h+='</div>';return h;
@@ -851,7 +848,6 @@ function buildMealsView(d){
     h+=`<div class="card"><div class="clbl">🍳 Meal prep summary</div>`;
     h+=`<div style="font-size:13px;color:var(--t2);margin-bottom:12px;line-height:1.6">Meals that repeat across the week — batch cook these on your prep day to save time.</div>`;
     batchMeals.forEach(([name,info])=>{
-      const url=`https://www.allrecipes.com/search?q=${encodeURIComponent(name)}`;
       h+=`<div style="background:var(--s2);border-radius:var(--rs);padding:12px;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
         <div style="flex:1;min-width:0">
           <div style="font-size:14px;font-weight:500;color:var(--tx);margin-bottom:3px">${name}</div>
@@ -860,7 +856,6 @@ function buildMealsView(d){
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
           <div style="background:var(--adim);border:.5px solid rgba(200,240,110,.25);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;color:var(--ac);">×${info.count}</div>
-          <a href="${url}" target="_blank" class="mlink" style="padding:4px 10px">🔗 Recipe</a>
         </div>
       </div>`;
     });
@@ -885,7 +880,6 @@ function buildMealsView(d){
       } else if(day.meals){
         mealTypes.forEach(([key,lbl])=>{
           const m=day.meals[key];if(!m)return;
-          const url=`https://www.allrecipes.com/search?q=${encodeURIComponent(m.searchQuery||m.name)}`;
           h+=`<div style="display:flex;align-items:flex-start;gap:10px;padding-left:36px;margin-bottom:6px">
             <div style="min-width:70px;font-size:11px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding-top:2px">${key}</div>
             <div style="flex:1">
@@ -893,7 +887,6 @@ function buildMealsView(d){
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                 <span style="font-size:11px;color:var(--t3)">~${m.calories} kcal</span>
                 ${m.prepNote?`<span style="font-size:11px;color:var(--am)">🥘 ${m.prepNote}</span>`:''}
-                <a href="${url}" target="_blank" style="font-size:11px;color:var(--bl);text-decoration:none">🔗 recipe</a>
               </div>
             </div>
           </div>`;
